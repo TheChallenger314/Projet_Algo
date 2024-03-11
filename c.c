@@ -1,1 +1,1 @@
-y
+printf("gg");
