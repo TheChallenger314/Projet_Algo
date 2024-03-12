@@ -2,76 +2,169 @@
 #include <stdlib.h>
 #include <string.h>
 
-// Structure représentant une règle
-typedef struct {
-    char premisses[10][50];  // Maximum de 10 prémices
-    char conclusion[50];
-} Rule;
+// Structure représentant un fait
+typedef struct Fait {
+    char* fait;
+    struct Fait* suivant;
+} Fait;
 
-// Fonction pour lire les règles depuis le fichier
-Rule* lire_regles(FILE* fichier, int* nombre_regles) {
-    // Assume un maximum de 100 règles, ajuster si nécessaire
-    Rule* regles = malloc(100 * sizeof(Rule));
-    if (regles == NULL) {
+// Structure représentant une règle
+typedef struct Rules {
+    char* conclusion;
+    Fait* premise;
+    struct Rules* suivant;
+} Rules;
+
+Rules* lireRegles(FILE* fichier, int* nombreRegles) {
+    Rules* listeRegles = NULL;
+
+    char conclusion[50];
+    while (fscanf(fichier, "%s", conclusion) == 1) {
+        ajouterRegle(&listeRegles, conclusion);
+
+        char fait[50];
+        while (fscanf(fichier, "%s", fait) == 1 && strcmp(fait, "->") != 0) {
+            ajouterFait(listeRegles, fait);
+        }
+    }
+
+    *nombreRegles = 0;
+    Rules* tmp = listeRegles;
+    while (tmp != NULL) {
+        (*nombreRegles)++;
+        tmp = tmp->suivant;
+    }
+
+    return listeRegles;
+}
+// Fonction pour initialiser un fait
+Fait* initFait(char* fait) {
+    Fait* nouveauFait = malloc(sizeof(Fait));
+    if (nouveauFait == NULL) {
         perror("Erreur lors de l'allocation de mémoire");
         exit(EXIT_FAILURE);
     }
+    nouveauFait->fait = strdup(fait);
+    nouveauFait->suivant = NULL;
+    return nouveauFait;
+}
 
-    int i = 0;
-    while (fscanf(fichier, "%s", regles[i].premisses[0]) == 1) {
-        int j = 1;
-        while (fgetc(fichier) == ' '&& fgetc(fichier)!='-') {
-            fscanf(fichier, "%s", regles[i].premisses[j]);
-            j++;
-        }
+// Fonction pour ajouter un fait à une règle
+void ajouterFait(Rules* regle, char* fait) {
+    Fait* nouveauFait = initFait(fait);
+    nouveauFait->suivant = regle->premise;
+    regle->premise = nouveauFait;
+}
 
-        fscanf(fichier, "> %s;", regles[i].conclusion);
-        printf("%s",regles[i].conclusion);
-        i++;
+// Fonction pour initialiser une règle
+Rules* initRegle(char* conclusion) {
+    Rules* nouvelleRegle = malloc(sizeof(Rules));
+    if (nouvelleRegle == NULL) {
+        perror("Erreur lors de l'allocation de mémoire");
+        exit(EXIT_FAILURE);
     }
+    nouvelleRegle->conclusion = strdup(conclusion);
+    nouvelleRegle->premise = NULL;
+    nouvelleRegle->suivant = NULL;
+    return nouvelleRegle;
+}
 
-    *nombre_regles = i;
-    return regles;
+// Fonction pour ajouter une règle à une liste de règles
+void ajouterRegle(Rules** listeRegles, char* conclusion) {
+    Rules* nouvelleRegle = initRegle(conclusion);
+    nouvelleRegle->suivant = *listeRegles;
+    *listeRegles = nouvelleRegle;
 }
 
 // Fonction pour afficher les faits
-void afficher_faits(char faits[10][50], int nombre_faits) {
+void afficherFaits(Fait* faits) {
     printf("Faits entrés par l'utilisateur :\n");
-    for (int i = 0; i < nombre_faits; i++) {
-        printf("Fait %d : %s\n", i + 1, faits[i]);
+    while (faits != NULL) {
+        printf("Fait : %s\n", faits->fait);
+        faits = faits->suivant;
+    }
+}
+
+// Fonction pour afficher les règles
+void afficherRegles(Rules* listeRegles) {
+    printf("\nListe des règles :\n");
+    while (listeRegles != NULL) {
+        Fait* premisses = listeRegles->premise;
+        printf("Règle : ");
+        while (premisses != NULL) {
+            printf("%s ", premisses->fait);
+            premisses = premisses->suivant;
+        }
+        printf("-> %s\n", listeRegles->conclusion);
+        listeRegles = listeRegles->suivant;
     }
 }
 
 // Fonction pour évaluer les faits avec les règles
-void evaluer_faits(char faits[10][50], int nombre_faits, Rule* regles, int nombre_regles) {
+void evaluerFaits(Fait* faits, Rules* listeRegles) {
     printf("\nRésultat en fonction des règles :\n");
 
-    if (nombre_faits < 1 || nombre_faits > 10) {
-        printf("Le nombre de faits doit être compris entre 1 et 10.\n");
-        return;
-    }
-
-    for (int i = 0; i < nombre_regles; i++) {
+    while (listeRegles != NULL) {
+        Fait* premisses = listeRegles->premise;
         int match = 1;
-        for (int j = 0; j < nombre_faits; j++) {
-            if (strcmp(faits[j], regles[i].premisses[j]) != 0) {
+
+        while (premisses != NULL) {
+            Fait* faitCourant = faits;
+            int faitTrouve = 0;
+
+            while (faitCourant != NULL) {
+                if (strcmp(faitCourant->fait, premisses->fait) == 0) {
+                    faitTrouve = 1;
+                    break;
+                }
+                faitCourant = faitCourant->suivant;
+            }
+
+            if (!faitTrouve) {
                 match = 0;
                 break;
             }
+
+            premisses = premisses->suivant;
         }
 
         if (match) {
             printf("Règle correspondante trouvée : ");
-            for (int k = 0; k < nombre_faits; k++) {
-                printf("%s ", regles[i].premisses[k]);
+            Fait* premissesAffichage = listeRegles->premise;
+            while (premissesAffichage != NULL) {
+                printf("%s ", premissesAffichage->fait);
+                premissesAffichage = premissesAffichage->suivant;
             }
-            printf("-> %s\n", regles[i].conclusion);
-            printf("Résultat : %s\n", regles[i].conclusion);
+            printf("-> %s\n", listeRegles->conclusion);
+            printf("Résultat : %s\n", listeRegles->conclusion);
             return;
         }
+
+        listeRegles = listeRegles->suivant;
     }
 
     printf("Aucune règle correspondante trouvée.\n");
+}
+
+// Fonction pour libérer la mémoire des faits
+void libererFaits(Fait* faits) {
+    while (faits != NULL) {
+        Fait* suivant = faits->suivant;
+        free(faits->fait);
+        free(faits);
+        faits = suivant;
+    }
+}
+
+// Fonction pour libérer la mémoire des règles
+void libererRegles(Rules* listeRegles) {
+    while (listeRegles != NULL) {
+        Rules* suivant = listeRegles->suivant;
+        free(listeRegles->conclusion);
+        libererFaits(listeRegles->premise);
+        free(listeRegles);
+        listeRegles = suivant;
+    }
 }
 
 int main() {
@@ -81,29 +174,40 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    int nombre_regles;
-    Rule* regles = lire_regles(fichier, &nombre_regles);
+    Rules* listeRegles = NULL;
 
-    int nombre_faits;
-    printf("Entrez le nombre de faits : ");
-    scanf("%d", &nombre_faits);
+    char conclusion[50];
+    while (fscanf(fichier, "%s", conclusion) == 1) {
+        ajouterRegle(&listeRegles, conclusion);
 
-    char faits[nombre_faits][50];
-
-    // Laisser l'utilisateur saisir les faits
-    for (int i = 0; i < nombre_faits; i++) {
-        printf("Entrez le fait %d : ", i + 1);
-        scanf("%s", faits[i]);
+        char fait[50];
+        while (fscanf(fichier, "%s", fait) == 1 && strcmp(fait, "->") != 0) {
+            ajouterFait(listeRegles, fait);
+        }
     }
 
-    // Afficher les faits
-    afficher_faits(faits, nombre_faits);
-
-    // Évaluer les faits avec les règles
-    evaluer_faits(faits, nombre_faits, regles, nombre_regles);
-
     fclose(fichier);
-    free(regles);
+
+    Fait* faits = NULL;
+    int nombreFaits;
+    printf("Entrez le nombre de faits : ");
+    scanf("%d", &nombreFaits);
+
+    for (int i = 0; i < nombreFaits; i++) {
+        char fait[50];
+        printf("Entrez le fait %d : ", i + 1);
+        scanf("%s", fait);
+        Fait* nouveauFait = initFait(fait);
+        nouveauFait->suivant = faits;
+        faits = nouveauFait;
+    }
+
+    afficherFaits(faits);
+    afficherRegles(listeRegles);
+    evaluerFaits(faits, listeRegles);
+
+    libererFaits(faits);
+    libererRegles(listeRegles);
 
     return EXIT_SUCCESS;
 }
