@@ -4,7 +4,7 @@
 
 // Structure représentant une règle
 typedef struct {
-    char premisses[2][50];  // Deux prémices possibles
+    char premisses[100][50];  // Deux prémices possibles
     char conclusion[50];
 } Rule;
 
@@ -16,13 +16,11 @@ Rule* lire_regles(FILE* fichier, int* nombre_regles) {
         perror("Erreur lors de l'allocation de mémoire");
         exit(EXIT_FAILURE);
     }
-
     int i = 0;
     while (fscanf(fichier, "%s %s -> %s", regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion) == 3) {
         printf("%s ,%s -> %s\n",regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion);
         i++;
     }
-
     *nombre_regles = i;
     return regles;
 }
