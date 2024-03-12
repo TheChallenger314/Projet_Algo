@@ -4,7 +4,7 @@
 
 // Structure représentant une règle
 typedef struct {
-    char premisses[100][50];  // Deux prémices possibles
+    char premisses[10][50];  // Maximum de 10 prémices
     char conclusion[50];
 } Rule;
 
@@ -16,17 +16,26 @@ Rule* lire_regles(FILE* fichier, int* nombre_regles) {
         perror("Erreur lors de l'allocation de mémoire");
         exit(EXIT_FAILURE);
     }
+
     int i = 0;
-    while (fscanf(fichier, "%s %s -> %s", regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion) == 3) {
-        printf("%s ,%s -> %s\n",regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion);
+    while (fscanf(fichier, "%s", regles[i].premisses[0]) == 1) {
+        int j = 1;
+        while (fgetc(fichier) == ' ') {
+            fscanf(fichier, "%s", regles[i].premisses[j]);
+            j++;
+        }
+
+        fscanf(fichier, "-> %s;", regles[i].conclusion);
+        printf("%s",regles[i].premisses[2]);
         i++;
     }
+
     *nombre_regles = i;
     return regles;
 }
 
 // Fonction pour afficher les faits
-void afficher_faits(char faits[2][50], int nombre_faits) {
+void afficher_faits(char faits[10][50], int nombre_faits) {
     printf("Faits entrés par l'utilisateur :\n");
     for (int i = 0; i < nombre_faits; i++) {
         printf("Fait %d : %s\n", i + 1, faits[i]);
@@ -34,8 +43,13 @@ void afficher_faits(char faits[2][50], int nombre_faits) {
 }
 
 // Fonction pour évaluer les faits avec les règles
-void evaluer_faits(char faits[2][50], int nombre_faits, Rule* regles, int nombre_regles) {
+void evaluer_faits(char faits[10][50], int nombre_faits, Rule* regles, int nombre_regles) {
     printf("\nRésultat en fonction des règles :\n");
+
+    if (nombre_faits < 1 || nombre_faits > 10) {
+        printf("Le nombre de faits doit être compris entre 1 et 10.\n");
+        return;
+    }
 
     for (int i = 0; i < nombre_regles; i++) {
         int match = 1;
@@ -47,7 +61,11 @@ void evaluer_faits(char faits[2][50], int nombre_faits, Rule* regles, int nombre
         }
 
         if (match) {
-            printf("Règle correspondante trouvée : %s, %s -> %s\n", regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion);
+            printf("Règle correspondante trouvée : ");
+            for (int k = 0; k < nombre_faits; k++) {
+                printf("%s ", regles[i].premisses[k]);
+            }
+            printf("-> %s\n", regles[i].conclusion);
             printf("Résultat : %s\n", regles[i].conclusion);
             return;
         }
