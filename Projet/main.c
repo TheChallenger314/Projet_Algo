@@ -37,7 +37,7 @@ void test3() {
             }
             token = strtok(NULL, "->");
             if (token == NULL) {
-                printf("Element après la fleche : %s\n", token);
+                printf("Element aprï¿½s la fleche : %s\n", token);
             }
         }
     }
@@ -48,5 +48,33 @@ int main()
     affiche_fichier();
     test2();
     test3();
+    return 0;
+}
+
+
+#include <stdio.h>
+#include <string.h>
+#include <ctype.h>
+
+#define MAX_LENGTH 1000
+
+void extractVariables(char *rules) {
+    int isVariable[26] = {0}; // To track which characters (variables) have been printed
+    for (int i = 0; i < strlen(rules); i++) {
+        if (isalpha(rules[i])) {
+            // Convert the character to its alphabetical index (0 for 'a' or 'A', 1 for 'b' or 'B', etc.)
+            int index = tolower(rules[i]) - 'a';
+            if (!isVariable[index]) {
+                printf("%c ", rules[i]);
+                isVariable[index] = 1; // Mark this character as printed
+            }
+        }
+    }
+    printf("\n");
+}
+
+int main() {
+    char rules[MAX_LENGTH] = "b d e -> f; g d -> a; f c -> a; b -> x; e -> d; a x -> h; c -> d; x c -> a; x b -> d;";
+    extractVariables(rules);
     return 0;
 }
