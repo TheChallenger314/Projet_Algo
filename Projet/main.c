@@ -18,7 +18,8 @@ Rule* lire_regles(FILE* fichier, int* nombre_regles) {
     }
 
     int i = 0;
-    while (fscanf(fichier, "%s, %s -> %s", regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion) == 3) {
+    while (fscanf(fichier, "%s %s -> %s", regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion) == 3) {
+        printf("%s ,%s -> %s\n",regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion);
         i++;
     }
 
@@ -58,7 +59,7 @@ void evaluer_faits(char faits[2][50], int nombre_faits, Rule* regles, int nombre
 }
 
 int main() {
-    FILE* fichier = fopen("regle.txt", "r");
+    FILE* fichier = fopen("regle.kbs", "r");
     if (fichier == NULL) {
         perror("Erreur lors de l'ouverture du fichier");
         return EXIT_FAILURE;
