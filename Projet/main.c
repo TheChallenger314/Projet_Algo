@@ -20,13 +20,13 @@ Rule* lire_regles(FILE* fichier, int* nombre_regles) {
     int i = 0;
     while (fscanf(fichier, "%s", regles[i].premisses[0]) == 1) {
         int j = 1;
-        while (fgetc(fichier) == ' ') {
+        while (fgetc(fichier) == ' '&& fgetc(fichier)!='-') {
             fscanf(fichier, "%s", regles[i].premisses[j]);
             j++;
         }
 
-        fscanf(fichier, "-> %s;", regles[i].conclusion);
-        printf("%s",regles[i].premisses[2]);
+        fscanf(fichier, "> %s;", regles[i].conclusion);
+        printf("%s",regles[i].conclusion);
         i++;
     }
 
