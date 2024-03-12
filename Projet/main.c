@@ -1,52 +1,92 @@
 #include <stdio.h>
 #include <stdlib.h>
-FILE* ouverture_fichier()
-{
-    FILE* fichier = fopen("regle.txt","r");
-    return fichier;
-}
-void test2()
-{
-    FILE* fichier = ouverture_fichier();
-    char ligne[100];
-    fgets(ligne, sizeof(ligne), fichier);
-    fputs(ligne, stdout);
-    fclose(fichier);
-}
-void affiche_fichier()
-{
-    char buffer[50];
-    size_t octets_lus;
-    octets_lus = fread(buffer, 1, sizeof(buffer), ouverture_fichier());
-    fwrite(buffer, 1, octets_lus, stdout);
-}
-void test3() {
-    FILE *fichier = fopen("regle.txt", "r");
-    if (fichier == NULL) {
-        perror("Erreur lors de l'ouverture du fichier");
-        return;
+#include <string.h>
+
+// Structure représentant une règle
+typedef struct {
+    char premisses[2][50];  // Deux prémices possibles
+    char conclusion[50];
+} Rule;
+
+// Fonction pour lire les règles depuis le fichier
+Rule* lire_regles(FILE* fichier, int* nombre_regles) {
+    // Assume un maximum de 100 règles, ajuster si nécessaire
+    Rule* regles = malloc(100 * sizeof(Rule));
+    if (regles == NULL) {
+        perror("Erreur lors de l'allocation de mémoire");
+        exit(EXIT_FAILURE);
     }
-    char ligne[100];
-    while (fgets(ligne, sizeof(ligne), fichier) != NULL) {
-        char *token = strtok(ligne, "->");
-        while (token != NULL) {
-            char *sous_token = strtok(token, ",");
-            while (sous_token != NULL) {
-                printf("Element : %s\n", sous_token);
-                sous_token = strtok(NULL, ",");
-            }
-            token = strtok(NULL, "->");
-            if (token == NULL) {
-                printf("Element apr�s la fleche : %s\n", token);
+
+    int i = 0;
+    while (fscanf(fichier, "%s, %s -> %s", regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion) == 3) {
+        i++;
+    }
+
+    *nombre_regles = i;
+    return regles;
+}
+
+// Fonction pour afficher les faits
+void afficher_faits(char faits[2][50], int nombre_faits) {
+    printf("Faits entrés par l'utilisateur :\n");
+    for (int i = 0; i < nombre_faits; i++) {
+        printf("Fait %d : %s\n", i + 1, faits[i]);
+    }
+}
+
+// Fonction pour évaluer les faits avec les règles
+void evaluer_faits(char faits[2][50], int nombre_faits, Rule* regles, int nombre_regles) {
+    printf("\nRésultat en fonction des règles :\n");
+
+    for (int i = 0; i < nombre_regles; i++) {
+        int match = 1;
+        for (int j = 0; j < nombre_faits; j++) {
+            if (strcmp(faits[j], regles[i].premisses[j]) != 0) {
+                match = 0;
+                break;
             }
         }
+
+        if (match) {
+            printf("Règle correspondante trouvée : %s, %s -> %s\n", regles[i].premisses[0], regles[i].premisses[1], regles[i].conclusion);
+            printf("Résultat : %s\n", regles[i].conclusion);
+            return;
+        }
     }
-    fclose(fichier);
+
+    printf("Aucune règle correspondante trouvée.\n");
 }
-int main()
-{
-    affiche_fichier();
-    test2();
-    test3();
-    return 0;
+
+int main() {
+    FILE* fichier = fopen("regle.txt", "r");
+    if (fichier == NULL) {
+        perror("Erreur lors de l'ouverture du fichier");
+        return EXIT_FAILURE;
+    }
+
+    int nombre_regles;
+    Rule* regles = lire_regles(fichier, &nombre_regles);
+
+    int nombre_faits;
+    printf("Entrez le nombre de faits : ");
+    scanf("%d", &nombre_faits);
+
+    char faits[nombre_faits][50];
+
+    // Laisser l'utilisateur saisir les faits
+    for (int i = 0; i < nombre_faits; i++) {
+        printf("Entrez le fait %d : ", i + 1);
+        scanf("%s", faits[i]);
+    }
+
+    // Afficher les faits
+    afficher_faits(faits, nombre_faits);
+
+    // Évaluer les faits avec les règles
+    evaluer_faits(faits, nombre_faits, regles, nombre_regles);
+
+    fclose(fichier);
+    free(regles);
+
+    return EXIT_SUCCESS;
 }
