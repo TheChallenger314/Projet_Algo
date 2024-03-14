@@ -2,11 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <stdbool.h>
 
 #define MAX_INGREDIENTS 10
 #define MAX_LINE_LENGTH 256
 #define MAX_PIZZAS 20
-
+char *filename = "pizza.kbs";
 typedef struct {
     char name[50];
     char ingredients[MAX_INGREDIENTS][50];
@@ -24,7 +25,7 @@ void trimNewline(char *str) {
     str[strcspn(str, "\n")] = 0;
 }
 
-int loadPizzas(char *filename, Pizza pizzas[]) {
+int loadPizzas(Pizza pizzas[]) {
     FILE *file = fopen(filename, "r");
     if (!file) {
         perror("Unable to open the file");
@@ -44,13 +45,13 @@ int loadPizzas(char *filename, Pizza pizzas[]) {
             trimNewline(namePart); // Additional trim in case of spaces around '->'
 
             // Process ingredients
-            char *ingredientToken = strtok(ingredientPart, ",");
+            char *ingredientToken = strtok(ingredientPart, " ");
             int i = 0;
             while (ingredientToken && i < MAX_INGREDIENTS) {
                 strcpy(pizzas[pizzaCount].ingredients[i], ingredientToken);
                 trimNewline(pizzas[pizzaCount].ingredients[i]); // Trim potential spaces
                 toLowerCase(pizzas[pizzaCount].ingredients[i]); // Ensure lowercase
-                ingredientToken = strtok(NULL, ",");
+                ingredientToken = strtok(NULL, " ");
                 i++;
             }
             pizzas[pizzaCount].ingredientCount = i;
@@ -69,7 +70,7 @@ int loadPizzas(char *filename, Pizza pizzas[]) {
 }
 
 void findPizzaByIngredients(Pizza pizzas[], int pizzaCount) {
-    printf("Enter ingredients (separated by commas): ");
+    printf("Enter ingredients (separated by spaces): ");
     char input[256];
     scanf(" %[^\n]", input); // Lire une ligne entière, incluant les espaces
     toLowerCase(input);
@@ -86,18 +87,18 @@ void findPizzaByIngredients(Pizza pizzas[], int pizzaCount) {
     for (int i = 0; i < pizzaCount; i++) {
         bool containsAll = true;
         for (int j = 0; j < nIngredients; j++) {
-            bool ingredientFound = false;
+            bool ingredientFound = 0;
             for (int k = 0; k < pizzas[i].ingredientCount; k++) {
                 char ingredientLower[50];
                 strcpy(ingredientLower, pizzas[i].ingredients[k]);
                 toLowerCase(ingredientLower);
                 if (strstr(ingredientLower, searchIngredients[j]) != NULL) {
-                    ingredientFound = true;
+                    ingredientFound = 1;
                     break;
                 }
             }
             if (!ingredientFound) {
-                containsAll = false;
+                containsAll = 0;
                 break;
             }
         }
@@ -108,7 +109,7 @@ void findPizzaByIngredients(Pizza pizzas[], int pizzaCount) {
 }
 
 
-vvoid findIngredientsByPizzaName(Pizza pizzas[], int pizzaCount) {
+void findIngredientsByPizzaName(Pizza pizzas[], int pizzaCount) {
     char searchName[50];
     printf("Enter pizza name: ");
     scanf("%49s", searchName);
@@ -138,7 +139,7 @@ vvoid findIngredientsByPizzaName(Pizza pizzas[], int pizzaCount) {
 
 int main() {
     Pizza pizzas[MAX_PIZZAS];
-    int pizzaCount = loadPizzas("pizzas.kbs", pizzas);
+    int pizzaCount = loadPizzas(pizzas);
 
     int choice;
     do {
