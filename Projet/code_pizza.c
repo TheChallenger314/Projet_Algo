@@ -178,15 +178,40 @@ void print_rules(Rule* rules) {
         free(temp);
     }
  }
-// Fonction principale
-int main() {
+void menu()
+{
     FILE* factsFile = ouvrir_fichier("faits.kbs");
     Fact* facts = lireFait(factsFile);
     FILE* rulesFile = ouvrir_fichier("regles.kbs");
     Rule* rules = lireRegle(rulesFile);
-    printf("Chaînage avant :\n");
-    print_rules(rules);
-    forwardChaining(facts, rules);
+    int choix = 0;
+    printf("============================================================================================\n");
+    printf("\t\t1. Chainage Avant \n\t\t2. Chainage Arriere \n\t\t3. Ajouter un Fait \n\t\t4. Ajouter un Regle\n");
+    printf("============================================================================================\n");
+    scanf("%s",&choix);
+    switch (choix)
+    {
+        case 1:
+            printf("Chaînage avant :\n");
+            print_rules(rules);
+            forwardChaining(facts, rules);
+            break;
+        case 2:
+            printf("\nEntrez le goal : ");
+            char goal[100];
+            scanf("%s", goal);
+            printf("\nChaînage arrière :\n");
+            backwardChaining(goal, facts, rules);
+            break;
+        case 3:
+            
+
+    }
+}
+// Fonction principale
+int main() {
+    menu();
+    
     printf("\nEntrez le goal : ");
     char goal[100];
     scanf("%s", goal);
