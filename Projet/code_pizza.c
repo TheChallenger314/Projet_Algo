@@ -120,17 +120,17 @@ void print_rules(Rule* rules) {
         current = current->next;
     }
 }
- 
-// Fonction principale
-int main() {
-    // Ouvrir le fichier de faits
-    FILE* factsFile = fopen("faits.kbs", "r");
+ FILE *ouvrir_fichier(char *filename)
+ {
+    FILE* factsFile = fopen(filename, "r");
     if (factsFile == NULL) {
         perror("Impossible d'ouvrir le fichier de faits");
-        return 1;
+        return NULL;
     }
- 
-    // Lire les faits du fichier et les stocker dans une liste chaînée
+    return factsFile;
+ }
+ Fact *lireFait(FILE *factsFile)
+ {
     Fact* facts = NULL;
     char line[100];
     while (fgets(line, sizeof(line), factsFile) != NULL) {
@@ -145,16 +145,11 @@ int main() {
         addFact(&facts, line);
     }
     fclose(factsFile);
- 
-    // Ouvrir le fichier de règles
-    FILE* rulesFile = fopen("regles.kbs", "r");
-    if (rulesFile == NULL) {
-        perror("Impossible d'ouvrir le fichier de règles");
-        return 1;
-    }
- 
-    // Lire les règles du fichier et les stocker dans une liste chaînée
-    Rule* rules = NULL;
+    return facts;
+ }
+ Rule *lireRegle(FILE *rulesFile)
+ {
+    Rule *rules=NULL;
     char ruleLine[200];
     while (fgets(ruleLine, sizeof(ruleLine), rulesFile) != NULL) {
         char condition[100], conclusion[100];
@@ -163,35 +158,41 @@ int main() {
         }
     }
     fclose(rulesFile);
- 
-    // Appliquer le chaînage avant
-    printf("Chaînage avant :\n");
-    print_rules(rules);
-    forwardChaining(facts, rules);
- 
-    // Demander à l'utilisateur d'entrer le goal
-    printf("\nEntrez le goal : ");
-    char goal[100];
-    scanf("%s", goal);
- 
-    // Appliquer le chaînage arrière
-    printf("\nChaînage arrière :\n");
-    backwardChaining(goal, facts, rules);
- 
-    // Libérer la mémoire
-    Fact* currentFact = facts;
-    while (currentFact != NULL) {
-        Fact* temp = currentFact;
-        currentFact = currentFact->next;
-        free(temp);
-    }
- 
+    return rules;
+ }
+ Rule *libereRegle(Rule *rules)
+ {
     Rule* currentRule = rules;
     while (currentRule != NULL) {
         Rule* temp = currentRule;
         currentRule = currentRule->next;
         free(temp);
     }
- 
+ }
+ Fact *libereFait(Fact *facts)
+ {
+    Fact* currentFact = facts;
+    while (currentFact != NULL) {
+        Fact* temp = currentFact;
+        currentFact = currentFact->next;
+        free(temp);
+    }
+ }
+// Fonction principale
+int main() {
+    FILE* factsFile = ouvrir_fichier("faits.kbs");
+    Fact* facts = lireFait(factsFile);
+    FILE* rulesFile = ouvrir_fichier("regles.kbs");
+    Rule* rules = lireRegle(rulesFile);
+    printf("Chaînage avant :\n");
+    print_rules(rules);
+    forwardChaining(facts, rules);
+    printf("\nEntrez le goal : ");
+    char goal[100];
+    scanf("%s", goal);
+    printf("\nChaînage arrière :\n");
+    backwardChaining(goal, facts, rules);
+    libereFait(facts);
+    libereRegle(rules);
     return 0;
 }
