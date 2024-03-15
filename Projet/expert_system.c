@@ -1,138 +1,199 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define MAX_FACTS 100
-#define MAX_RULES 100
-#define MAX_CONDITIONS 10
-
-typedef struct {
-    char fact;
-    int state; // 0 for false, 1 for true
+ 
+// Structure de fait
+typedef struct Fact {
+    char description[100]; // Assumons une longueur maximale de 100 caractères pour la description du fait
+    struct Fact* next;
 } Fact;
-
-typedef struct {
-    char conditions[MAX_CONDITIONS]; // Conditions to meet (facts)
-    char result; // Resulting fact if conditions are met
-    int conditions_count;
+ 
+// Structure de règle
+typedef struct Rule {
+    char condition[100]; // Assumons une longueur maximale de 100 caractères pour la condition de la règle
+    char conclusion[100]; // Assumons une longueur maximale de 100 caractères pour la conclusion de la règle
+    int num_hypotheses;
+    struct Rule* next;
 } Rule;
-
-Fact facts[MAX_FACTS];
-Rule rules[MAX_RULES];
-int facts_count = 0;
-int rules_count = 0;
-
-void initializeFacts() {
-    // Example: Initialize with two facts
-    facts[0].fact = 'b';
-    facts[0].state = 1;
-    facts[1].fact = 'c';
-    facts[1].state = 1;
-    facts_count = 2;
-}
-
-void loadFactsFromFile(const char* filename) {
-    FILE* file = fopen(filename, "r");
-    if (file == NULL) {
-        perror("Unable to open the file");
-        exit(1);
+ 
+// Fonction pour ajouter un fait à la liste chaînée
+void addFact(Fact** head, char* description) {
+    Fact* newFact = (Fact*)malloc(sizeof(Fact));
+    if (newFact == NULL) {
+        fprintf(stderr, "Erreur d'allocation de mémoire\n");
+        exit(EXIT_FAILURE);
     }
-
-    while (fscanf(file, "%c %d\n", &facts[facts_count].fact, &facts[facts_count].state) != EOF) {
-        facts_count++;
+    strcpy(newFact->description, description);
+    newFact->next = *head;
+    *head = newFact;
+}
+ 
+// Fonction pour ajouter une règle à la liste chaînée
+void addRule(Rule** head, char* condition, char* conclusion) {
+    Rule* newRule = (Rule*)malloc(sizeof(Rule));
+    if (newRule == NULL) {
+        fprintf(stderr, "Erreur d'allocation de mémoire\n");
+        exit(EXIT_FAILURE);
     }
-
-    fclose(file);
+    strcpy(newRule->condition, condition);
+    strcpy(newRule->conclusion, conclusion);
+    newRule->next = *head;
+    *head = newRule;
 }
-
-void initializeRules() {
-    // Example: Initialize with one rule
-    // Rule: if b and c then d (b c -> d)
-    rules[0].conditions[0] = 'b';
-    rules[0].conditions[1] = 'c';
-    rules[0].result = 'd';
-    rules[0].conditions_count = 2;
-    rules_count = 1;
-}
-
-int isFactTrue(char fact) {
-    for (int i = 0; i < facts_count; i++) {
-        if (facts[i].fact == fact && facts[i].state == 1) {
-            return 1;
+ 
+// Chaînage avant
+void forwardChaining(Fact* facts, Rule* rules) {
+    Fact* currentFact = facts;
+    while (currentFact != NULL) {
+        Rule* currentRule = rules;
+        while (currentRule != NULL) {
+            if (strstr(currentFact->description, currentRule->condition) != NULL) {
+                printf("Condition: %s est vraie, conclusion: %s\n", currentRule->condition, currentRule->conclusion);
+                // Ajouter la conclusion comme un nouveau fait si elle n'existe pas déjà
+                Fact* newFact = facts;
+                int found = 0;
+                while (newFact != NULL) {
+                    if (strcmp(newFact->description, currentRule->conclusion) == 0) {
+                        found = 1;
+                        break;
+                    }
+                    newFact = newFact->next;
+                }
+                if (!found) {
+                    addFact(&facts, currentRule->conclusion);
+                }
+            }
+            currentRule = currentRule->next;
         }
+        currentFact = currentFact->next;
     }
-    return 0;
 }
-
-void loadRulesFromFile(const char* filename) {
-    FILE* file = fopen(filename, "r");
-    if (file == NULL) {
-        perror("Unable to open the file");
-        exit(1);
-    }
-
-    while (fscanf(file, "%c %c %c %d\n", &rules[rules_count].conditions[0], &rules[rules_count].conditions[1], &rules[rules_count].result, &rules[rules_count].conditions_count) != EOF) {
-        rules_count++;
-    }
-
-    fclose(file);
-}
-
-void applyRule(Rule rule) {
-    int conditions_met = 1;
-    for (int i = 0; i < rule.conditions_count; i++) {
-        if (!isFactTrue(rule.conditions[i])) {
-            conditions_met = 0;
-            break;
+ 
+// Chaînage arrière
+int backwardChaining(char* goal, Fact* facts, Rule* rules) {
+    // Vérifier si le goal est déjà un fait dans les faits
+    Fact* currentFact = facts;
+    while (currentFact != NULL) {
+        if (strstr(currentFact->description, goal) != NULL) {
+            printf("Goal: %s est vrai\n", goal);
+            return 1; // Le goal est déjà un fait présent, donc il est vrai
         }
+        currentFact = currentFact->next;
     }
-
-    if (conditions_met) {
-        for (int i = 0; i < facts_count; i++) {
-            if (facts[i].fact == rule.result) {
-                facts[i].state = 1;
-                return;
+ 
+    // Parcourir les règles pour voir si le goal peut être prouvé
+    Rule* currentRule = rules;
+    while (currentRule != NULL) {
+        if (strstr(currentRule->conclusion, goal) != NULL) {
+            printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition, currentRule->conclusion);
+            // Vérifier si les conditions de la règle peuvent être prouvées
+            int conditionsProuvees = 1;
+            char* token = strtok(currentRule->condition, " ");
+            while (token != NULL) {
+                if (!backwardChaining(token, facts, rules)) {
+                    conditionsProuvees = 0;
+                    break; // Si une condition ne peut pas être prouvée, arrêter la vérification des autres conditions
+                }
+                token = strtok(NULL, " ");
+            }
+            if (conditionsProuvees) {
+                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition, currentRule->conclusion);
+                printf("Goal: %s est prouvé\n", goal); // Afficher que le goal est prouvé
+                return 1; // Si toutes les conditions de la règle sont prouvées, la règle peut prouver le goal
             }
         }
-
-        // Add new fact if it doesn't exist
-        facts[facts_count].fact = rule.result;
-        facts[facts_count].state = 1;
-        facts_count++;
+        currentRule = currentRule->next;
+    }
+ 
+    printf("Goal: %s ne peut pas être prouvé\n", goal);
+    return 0; // Si aucune règle ne peut prouver le goal
+}
+ 
+// Fonction pour afficher les règles
+void print_rules(Rule* rules) {
+    printf("Liste des règles :\n");
+    Rule* current = rules;
+    int count = 0;
+    while (current != NULL) {
+        count++;
+        printf("n°%d) ", count);
+        printf("%s -> %s\n", current->condition, current->conclusion);
+        current = current->next;
     }
 }
-
-void forwardChaining() {
-    int applied = 1;
-    while (applied) {
-        applied = 0;
-        for (int i = 0; i < rules_count; i++) {
-            if (!isFactTrue(rules[i].result)) {
-                applyRule(rules[i]);
-                applied = 1;
-            }
-        }
-    }
-}
-
+ 
+// Fonction principale
 int main() {
-    initializeFacts();
-    initializeRules();
-
-    loadFactsFromFile("facts.txt");
-    loadRulesFromFile("regle.txt");
-    forwardChaining();
-
-    printf("Facts after forward chaining:\n");
-    for (int i = 0; i < facts_count; i++) {
-        if (facts[i].state == 1) {
-            printf("Fact %c is true\n", facts[i].fact);
-        }
-        else 
-        {
-            printf("Fact %c is false\n", facts[i].fact);
+    // Ouvrir le fichier de faits
+    FILE* factsFile = fopen("faits.kbs", "r");
+    if (factsFile == NULL) {
+        perror("Impossible d'ouvrir le fichier de faits");
+        return 1;
+    }
+ 
+    // Lire les faits du fichier et les stocker dans une liste chaînée
+    Fact* facts = NULL;
+    char line[100];
+    while (fgets(line, sizeof(line), factsFile) != NULL) {
+        // Supprimer le caractère de saut de ligne à la fin
+        line[strcspn(line, "\n")] = 0;
+ 
+        // Ignorer les lignes vides
+        if (strcmp(line, "") == 0)
+            continue;
+ 
+        // Ajouter le fait à la liste chaînée
+        addFact(&facts, line);
+    }
+    fclose(factsFile);
+ 
+    // Ouvrir le fichier de règles
+    FILE* rulesFile = fopen("regles.kbs", "r");
+    if (rulesFile == NULL) {
+        perror("Impossible d'ouvrir le fichier de règles");
+        return 1;
+    }
+ 
+    // Lire les règles du fichier et les stocker dans une liste chaînée
+    Rule* rules = NULL;
+    char ruleLine[200];
+    while (fgets(ruleLine, sizeof(ruleLine), rulesFile) != NULL) {
+        char condition[100], conclusion[100];
+        if (sscanf(ruleLine, "%99s %*s %99[^;];", condition, conclusion) == 2) {
+            addRule(&rules, condition, conclusion);
         }
     }
-
+    fclose(rulesFile);
+ 
+    // Appliquer le chaînage avant
+    printf("Chaînage avant :\n");
+    print_rules(rules);
+    forwardChaining(facts, rules);
+ 
+    // Demander à l'utilisateur d'entrer le goal
+    printf("\nEntrez le goal : ");
+    char goal[100];
+    scanf("%s", goal);
+ 
+    // Appliquer le chaînage arrière
+    printf("\nChaînage arrière :\n");
+    backwardChaining(goal, facts, rules);
+ 
+    // Libérer la mémoire
+    Fact* currentFact = facts;
+    while (currentFact != NULL) {
+        Fact* temp = currentFact;
+        currentFact = currentFact->next;
+        free(temp);
+    }
+ 
+    Rule* currentRule = rules;
+    while (currentRule != NULL) {
+        Rule* temp = currentRule;
+        currentRule = currentRule->next;
+        free(temp);
+    }
+ 
     return 0;
 }
+ 
