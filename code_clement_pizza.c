@@ -1,198 +1,199 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
- 
-// Structure de fait
+#include <stdbool.h>
+
 typedef struct Fact {
-    char description[100]; // Assumons une longueur maximale de 100 caractères pour la description du fait
-    struct Fact* next;
+    char name[100];
+    struct Fact *next;
 } Fact;
- 
-// Structure de règle
+
 typedef struct Rule {
-    char condition[100]; // Assumons une longueur maximale de 100 caractères pour la condition de la règle
-    char conclusion[100]; // Assumons une longueur maximale de 100 caractères pour la conclusion de la règle
-    int num_hypotheses;
-    struct Rule* next;
+    char hypothesis[10][100];
+    int hypothesisCount;
+    char conclusion[100];
+    struct Rule *next;
 } Rule;
- 
-// Fonction pour ajouter un fait à la liste chaînée
-void addFact(Fact** head, char* description) {
-    Fact* newFact = (Fact*)malloc(sizeof(Fact));
-    if (newFact == NULL) {
-        fprintf(stderr, "Erreur d'allocation de mémoire\n");
-        exit(EXIT_FAILURE);
+
+typedef struct KnowledgeBase {
+    Fact *facts;
+    Rule *rules;
+} KnowledgeBase;
+
+// Prototype de la fonction pour éviter l'avertissement d'appel implicite
+int factExists(KnowledgeBase *kb, const char *name);
+
+void addFact(KnowledgeBase *kb, const char *name) {
+    if (!factExists(kb, name)) {
+        Fact *newFact = (Fact *)malloc(sizeof(Fact));
+        strcpy(newFact->name, name);
+        newFact->next = kb->facts;
+        kb->facts = newFact;
     }
-    strcpy(newFact->description, description);
-    newFact->next = *head;
-    *head = newFact;
 }
- 
-// Fonction pour ajouter une règle à la liste chaînée
-void addRule(Rule** head, char* condition, char* conclusion) {
-    Rule* newRule = (Rule*)malloc(sizeof(Rule));
-    if (newRule == NULL) {
-        fprintf(stderr, "Erreur d'allocation de mémoire\n");
-        exit(EXIT_FAILURE);
+
+int factExists(KnowledgeBase *kb, const char *name) {
+    Fact *current = kb->facts;
+    while (current != NULL) {
+        if (strcmp(current->name, name) == 0) {
+            return 1;
+        }
+        current = current->next;
     }
-    strcpy(newRule->condition, condition);
+    return 0;
+}
+
+void addRule(KnowledgeBase *kb, char hypothesis[][100], int hypothesisCount, const char *conclusion) {
+    Rule *newRule = (Rule *)malloc(sizeof(Rule));
+    for (int i = 0; i < hypothesisCount; ++i) {
+        strcpy(newRule->hypothesis[i], hypothesis[i]);
+    }
+    newRule->hypothesisCount = hypothesisCount;
     strcpy(newRule->conclusion, conclusion);
-    newRule->next = *head;
-    *head = newRule;
+    newRule->next = kb->rules;
+    kb->rules = newRule;
 }
- 
-// Chaînage avant
-void forwardChaining(Fact* facts, Rule* rules) {
-    Fact* currentFact = facts;
-    while (currentFact != NULL) {
-        Rule* currentRule = rules;
-        while (currentRule != NULL) {
-            if (strstr(currentFact->description, currentRule->condition) != NULL) {
-                printf("Condition: %s est vraie, conclusion: %s\n", currentRule->condition, currentRule->conclusion);
-                // Ajouter la conclusion comme un nouveau fait si elle n'existe pas déjà
-                Fact* newFact = facts;
-                int found = 0;
-                while (newFact != NULL) {
-                    if (strcmp(newFact->description, currentRule->conclusion) == 0) {
-                        found = 1;
-                        break;
+
+void loadKnowledgeBase(const char *filename, KnowledgeBase *kb) {
+    FILE *file = fopen(filename, "r");
+    if (!file) {
+        perror("Error opening file");
+        exit(1);
+    }
+
+    char line[256];
+    while (fgets(line, sizeof(line), file)) {
+        char *token, *context;
+        char tempHypothesis[10][100];
+        int count = 0;
+        char *conclusion = NULL;
+
+        if (strstr(line, "->")) { // It's a rule
+            token = strtok_r(line, "->\n", &context);
+            while (token != NULL && count < 10) {
+                if (conclusion == NULL) {
+                    char *innerToken = strtok(token, " ");
+                    while (innerToken != NULL) {
+                        strcpy(tempHypothesis[count++], innerToken);
+                        innerToken = strtok(NULL, " ");
                     }
-                    newFact = newFact->next;
+                    conclusion = strtok_r(NULL, "->\n", &context);
                 }
-                if (!found) {
-                    addFact(&facts, currentRule->conclusion);
+                token = strtok_r(NULL, "->\n", &context);
+            }
+            addRule(kb, tempHypothesis, count, conclusion);
+        } else { // It's a fact
+            token = strtok(line, "\n");
+            addFact(kb, token);
+        }
+    }
+    fclose(file);
+}
+
+
+void forwardChaining(KnowledgeBase *kb) {
+    bool newFactAdded;
+    do {
+        newFactAdded = false;
+        Rule *currentRule = kb->rules;
+        while (currentRule != NULL) {
+            bool ruleApplies = true;
+            for (int i = 0; i < currentRule->hypothesisCount; i++) {
+                if (!factExists(kb, currentRule->hypothesis[i])) {
+                    ruleApplies = false;
+                    break;
                 }
+            }
+            if (ruleApplies && !factExists(kb, currentRule->conclusion)) {
+                addFact(kb, currentRule->conclusion);
+                newFactAdded = true;
+                printf("Nouvelle couleur déduite : %s\n", currentRule->conclusion);
             }
             currentRule = currentRule->next;
         }
-        currentFact = currentFact->next;
-    }
+    } while (newFactAdded);
 }
- 
-// Chaînage arrière
-int backwardChaining(char* goal, Fact* facts, Rule* rules) {
-    // Vérifier si le goal est déjà un fait dans les faits
-    Fact* currentFact = facts;
-    while (currentFact != NULL) {
-        if (strstr(currentFact->description, goal) != NULL) {
-            printf("Goal: %s est vrai\n", goal);
-            return 1; // Le goal est déjà un fait présent, donc il est vrai
-        }
-        currentFact = currentFact->next;
+
+
+bool backwardChaining(KnowledgeBase *kb, const char *goal) {
+    if (factExists(kb, goal)) {
+        // Le but est déjà un fait connu.
+        printf("Le fait '%s' est déjà connu.\n", goal);
+        return true;
     }
- 
-    // Parcourir les règles pour voir si le goal peut être prouvé
-    Rule* currentRule = rules;
-    while (currentRule != NULL) {
-        if (strstr(currentRule->conclusion, goal) != NULL) {
-            printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition, currentRule->conclusion);
-            // Vérifier si les conditions de la règle peuvent être prouvées
-            int conditionsProuvees = 1;
-            char* token = strtok(currentRule->condition, " ");
-            while (token != NULL) {
-                if (!backwardChaining(token, facts, rules)) {
-                    conditionsProuvees = 0;
-                    break; // Si une condition ne peut pas être prouvée, arrêter la vérification des autres conditions
+
+    // On commence par parcourir toutes les règles pour trouver celles qui ont 'goal' comme conclusion.
+    for (Rule *rule = kb->rules; rule != NULL; rule = rule->next) {
+        if (strcmp(rule->conclusion, goal) == 0) {
+            // Pour chaque règle trouvée, on vérifie récursivement si chaque hypothèse peut être déduite.
+            bool allHypothesesVerified = true;
+            for (int i = 0; i < rule->hypothesisCount; ++i) {
+                if (!backwardChaining(kb, rule->hypothesis[i])) {
+                    allHypothesesVerified = false;
+                    break;
                 }
-                token = strtok(NULL, " ");
             }
-            if (conditionsProuvees) {
-                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition, currentRule->conclusion);
-                printf("Goal: %s est prouvé\n", goal); // Afficher que le goal est prouvé
-                return 1; // Si toutes les conditions de la règle sont prouvées, la règle peut prouver le goal
+            if (allHypothesesVerified) {
+                // Si toutes les hypothèses peuvent être déduites, alors la règle est vérifiée.
+                printf("Pour obtenir '%s', les couleurs de base nécessaires sont: ", goal);
+                for (int i = 0; i < rule->hypothesisCount; ++i) {
+                    printf("%s ", rule->hypothesis[i]);
+                }
+                printf("\n");
+                return true;
             }
         }
-        currentRule = currentRule->next;
     }
- 
-    printf("Goal: %s ne peut pas être prouvé\n", goal);
-    return 0; // Si aucune règle ne peut prouver le goal
+
+    // Si aucune règle ne permet de déduire le but, afficher un message et retourner 'false'.
+    printf("La couleur '%s' ne peut pas être déduite avec la base de connaissances actuelle.\n", goal);
+    return false;
 }
- 
-// Fonction pour afficher les règles
-void print_rules(Rule* rules) {
-    printf("Liste des règles :\n");
-    Rule* current = rules;
-    int count = 0;
-    while (current != NULL) {
-        count++;
-        printf("n°%d) ", count);
-        printf("%s -> %s\n", current->condition, current->conclusion);
-        current = current->next;
-    }
-}
- 
-// Fonction principale
+
+
+
+
 int main() {
-    // Ouvrir le fichier de faits
-    FILE* factsFile = fopen("faits.txt", "r");
-    if (factsFile == NULL) {
-        perror("Impossible d'ouvrir le fichier de faits");
-        return 1;
+    KnowledgeBase kb = {NULL, NULL};
+    loadKnowledgeBase("couleurs.kbs", &kb);
+
+    int choix;
+    char couleur[100];
+    printf("\nMenu:\n");
+    printf("1. Chaînage avant\n");
+    printf("2. Chaînage arrière\n");
+    printf("3. Quitter\n");
+    printf("Choisissez une option: ");
+    scanf("%d", &choix);
+
+    switch (choix) {
+        case 1:
+              printf("Entrez le nombre de couleurs de base que vous voulez ajouter: ");
+            int nombre;
+            scanf("%d", &nombre);
+            for (int i = 0; i < nombre; i++) {
+                printf("Entrez la couleur de base %d: ", i + 1);
+                scanf("%s", couleur);
+                addFact(&kb, couleur);
+            }
+            //printf("Exécution du chaînage avant...\n");
+            forwardChaining(&kb);
+            break;
+        case 2:
+            printf("Entrez la couleur cible pour le chaînage arrière: ");
+            scanf("%s", couleur);
+            if (!backwardChaining(&kb, couleur)) {
+                printf("La couleur %s ne peut pas être déduite avec la base de connaissances actuelle.\n", couleur);
+            }
+            break;
+        case 3:
+            printf("Quitter.\n");
+            break;
+        default:
+            printf("Option invalide, veuillez réessayer.\n");
     }
- 
-    // Lire les faits du fichier et les stocker dans une liste chaînée
-    Fact* facts = NULL;
-    char line[100];
-    while (fgets(line, sizeof(line), factsFile) != NULL) {
-        // Supprimer le caractère de saut de ligne à la fin
-        line[strcspn(line, "\n")] = 0;
- 
-        // Ignorer les lignes vides
-        if (strcmp(line, "") == 0)
-            continue;
- 
-        // Ajouter le fait à la liste chaînée
-        addFact(&facts, line);
-    }
-    fclose(factsFile);
- 
-    // Ouvrir le fichier de règles
-    FILE* rulesFile = fopen("regles.txt", "r");
-    if (rulesFile == NULL) {
-        perror("Impossible d'ouvrir le fichier de règles");
-        return 1;
-    }
- 
-    // Lire les règles du fichier et les stocker dans une liste chaînée
-    Rule* rules = NULL;
-    char ruleLine[200];
-    while (fgets(ruleLine, sizeof(ruleLine), rulesFile) != NULL) {
-        char condition[100], conclusion[100];
-        if (sscanf(ruleLine, "%99s %*s %99[^;];", condition, conclusion) == 2) {
-            addRule(&rules, condition, conclusion);
-        }
-    }
-    fclose(rulesFile);
- 
-    // Appliquer le chaînage avant
-    printf("Chaînage avant :\n");
-    print_rules(rules);
-    forwardChaining(facts, rules);
- 
-    // Demander à l'utilisateur d'entrer le goal
-    printf("\nEntrez le goal : ");
-    char goal[100];
-    scanf("%s", goal);
- 
-    // Appliquer le chaînage arrière
-    printf("\nChaînage arrière :\n");
-    backwardChaining(goal, facts, rules);
- 
-    // Libérer la mémoire
-    Fact* currentFact = facts;
-    while (currentFact != NULL) {
-        Fact* temp = currentFact;
-        currentFact = currentFact->next;
-        free(temp);
-    }
- 
-    Rule* currentRule = rules;
-    while (currentRule != NULL) {
-        Rule* temp = currentRule;
-        currentRule = currentRule->next;
-        free(temp);
-    }
- 
+
+    // Libération de la mémoire allouée
+
     return 0;
 }
