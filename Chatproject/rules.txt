@@ -1,3 +1,9 @@
-a, b -> d
-c -> e
-d, e -> f
+b d e -> f;
+g d -> a;
+f c -> a;
+b -> x;
+e -> d;
+a x -> h;
+c -> d;
+x c -> a;
+x b -> d;

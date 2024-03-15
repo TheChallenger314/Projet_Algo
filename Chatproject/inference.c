@@ -30,12 +30,30 @@ void forwardChaining() {
                 }
             }
             if (valid) {
+                int factExists = 0;
                 for (int k = 0; k < facts_count; k++) {
-                    if (facts[k].fact == rules[i].conclusion && facts[k].state == 0) {
-                        facts[k].state = 1;
-                        changes = 1;
+                    if (facts[k].fact == rules[i].conclusion) {
+                        factExists = 1;
+                        if (facts[k].state == 0) {
+                            facts[k].state = 1;
+                            changes = 1;
+                            printf("%c is concluded to be true based on rule ", rules[i].conclusion);
+                            for (int m = 0; m < rules[i].conditions_count; m++) {
+                                printf("%c ", rules[i].conditions[m]);
+                            }
+                            printf("-> %c.\n", rules[i].conclusion);
+                        }
                         break;
                     }
+                }
+                if (!factExists) {
+                    printf("%c is concluded to be true based on rule ", rules[i].conclusion);
+                    for (int m = 0; m < rules[i].conditions_count; m++) {
+                        printf("%c ", rules[i].conditions[m]);
+                    }
+                    printf("-> %c.\n", rules[i].conclusion);
+                    facts[facts_count++] = (Fact){rules[i].conclusion, 1};
+                    changes = 1;
                 }
             }
         }

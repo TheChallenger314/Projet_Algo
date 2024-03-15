@@ -13,11 +13,24 @@ void loadRules(const char *filename) {
         exit(1);
     }
 
-    // Implémentez la logique de lecture des règles ici
-    while (fscanf(file, "%s -> %c;", rules[rules_count].conditions, &rules[rules_count].conclusion) != EOF) {
-        rules[rules_count].conditions_count = strlen(rules[rules_count].conditions);
-        rules_count++;
+    char line[1024];
+    while (fgets(line, sizeof(line), file)) {
+        Rule *current_rule = &rules[rules_count++];
+        current_rule->conditions_count = 0;
+
+        // Tokenize the line to read conditions
+        char *token = strtok(line, " ,->\n");
+        while (token && *token != '>' && current_rule->conditions_count < MAX_CONDITIONS) {
+            current_rule->conditions[current_rule->conditions_count++] = token[0];
+            token = strtok(NULL, " ,->\n");
+        }
+
+        // Read the conclusion
+        token = strtok(NULL, " ,->\n");
+        if (token) {
+            current_rule->conclusion = *token;
+        }
     }
-    // Mettez à jour rules et rules_count
+
     fclose(file);
 }
