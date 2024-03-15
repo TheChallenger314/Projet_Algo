@@ -14,66 +14,62 @@ typedef struct Rules {
     Fait* premise;
     struct Rules* suivant;
 } Rules;
-
-Rules* lireRegles(FILE* fichier, int* nombreRegles) {
-    Rules* listeRegles = NULL;
-
-    char conclusion[50];
-    while (fscanf(fichier, "%s", conclusion) == 1) {
-        ajouterRegle(&listeRegles, conclusion);
-
-        char fait[50];
-        while (fscanf(fichier, "%s", fait) == 1 && strcmp(fait, "->") != 0) {
-            ajouterFait(listeRegles, fait);
-        }
+Fait* initFait(int nombre);
+Rules* initRegle() {
+    Rules* regle = malloc(sizeof(Rules));
+    if (regle == NULL) {
+        perror("Erreur lors de l'allocation de mémoire");
+        exit(EXIT_FAILURE);
     }
-
-    *nombreRegles = 0;
-    Rules* tmp = listeRegles;
-    while (tmp != NULL) {
-        (*nombreRegles)++;
-        tmp = tmp->suivant;
-    }
-
-    return listeRegles;
+    regle->premise = initFait(3);
+    regle->conclusion = NULL;
+    regle->suivant = NULL;
+    return regle;
 }
+
+char* convertionRegles(FILE* fichier) {
+    // Determine the file size
+    fseek(fichier, 0, SEEK_END);
+    long file_size = ftell(fichier);
+    rewind(fichier);
+
+    // Allocate memory for the char array
+    char* ligne = malloc(file_size + 1);
+    if (ligne == NULL) {
+        perror("Error: Memory allocation failed");
+        exit(EXIT_FAILURE);
+    }
+
+    // Read the file into the char array
+    fread(ligne, file_size, 1, fichier);
+
+    // Add a null terminator at the end of the char array
+    ligne[file_size] = '\0';
+    return ligne;
+}
+
 // Fonction pour initialiser un fait
-Fait* initFait(char* fait) {
+Fait* initFait(int nombre) {
     Fait* nouveauFait = malloc(sizeof(Fait));
     if (nouveauFait == NULL) {
         perror("Erreur lors de l'allocation de mémoire");
         exit(EXIT_FAILURE);
     }
-    nouveauFait->fait = strdup(fait);
-    nouveauFait->suivant = NULL;
+    if (nombre == 0) {
+        nouveauFait->fait = "";
+        nouveauFait->suivant = NULL;
+    } else {
+        nouveauFait->fait = "";
+        nouveauFait->suivant = initFait(nombre - 1);
+    }
     return nouveauFait;
 }
 
 // Fonction pour ajouter un fait à une règle
-void ajouterFait(Rules* regle, char* fait) {
-    Fait* nouveauFait = initFait(fait);
+void ajouterFait(Rules* regle, int nombre) {
+    Fait* nouveauFait = initFait(nombre);
     nouveauFait->suivant = regle->premise;
     regle->premise = nouveauFait;
-}
-
-// Fonction pour initialiser une règle
-Rules* initRegle(char* conclusion) {
-    Rules* nouvelleRegle = malloc(sizeof(Rules));
-    if (nouvelleRegle == NULL) {
-        perror("Erreur lors de l'allocation de mémoire");
-        exit(EXIT_FAILURE);
-    }
-    nouvelleRegle->conclusion = strdup(conclusion);
-    nouvelleRegle->premise = NULL;
-    nouvelleRegle->suivant = NULL;
-    return nouvelleRegle;
-}
-
-// Fonction pour ajouter une règle à une liste de règles
-void ajouterRegle(Rules** listeRegles, char* conclusion) {
-    Rules* nouvelleRegle = initRegle(conclusion);
-    nouvelleRegle->suivant = *listeRegles;
-    *listeRegles = nouvelleRegle;
 }
 
 // Fonction pour afficher les faits
@@ -100,6 +96,54 @@ void afficherRegles(Rules* listeRegles) {
     }
 }
 
+Rules* lireRegles(Rules* list, char* ligne)
+{
+    int i=0;
+    char* buffer = malloc(strlen(ligne) + 1);
+    memset(buffer, 0, strlen(ligne) + 1);
+    Rules* current = list;
+    while (ligne[i] != '\0') {
+        if (ligne[i] == ' ') {
+            if (current->premise == NULL) {
+                current->premise = malloc(sizeof(char) * (strlen(buffer) + 1));
+                if (current->premise == NULL) {
+                    perror("Erreur lors de l'allocation de mémoire");
+                    exit(EXIT_FAILURE);
+                }
+                strcpy(current->premise->fait, buffer);
+            } else {
+                Fait* newFait = malloc(sizeof(Fait));
+                if (newFait == NULL) {
+                    perror("Erreur lors de l'allocation de mémoire");
+                    exit(EXIT_FAILURE);
+                }
+                newFait->fait = malloc(strlen(buffer) + 1);
+                if (newFait->fait == NULL) {
+                    perror("Erreur lors de l'allocation de mémoire");
+                    exit(EXIT_FAILURE);
+                }
+                strcpy(newFait->fait, buffer);
+                newFait->suivant = current->premise;
+                current->premise = newFait;
+            }
+            buffer[0] = '\0';
+        } else if (ligne[i] == '-' && ligne[i+1] == '>') {
+            current->conclusion = strdup(buffer);
+            i += 3;
+            buffer[0] = '\0';
+        }
+        if (ligne[i+1] == '\0' || ligne[i+2] == '\0') {
+            current->suivant = initRegle();
+            current = current->suivant;
+        }
+        if (ligne[i] != ' ' && ligne[i] != '-' && ligne[i] != '>') {
+            strncat(buffer, ligne + i, 1);
+        }
+        i++;
+    }
+    free(buffer);
+    return list;
+}
 // Fonction pour évaluer les faits avec les règles
 void evaluerFaits(Fait* faits, Rules* listeRegles) {
     printf("\nRésultat en fonction des règles :\n");
@@ -108,8 +152,7 @@ void evaluerFaits(Fait* faits, Rules* listeRegles) {
         Fait* premisses = listeRegles->premise;
         int match = 1;
 
-        while (premisses != NULL) {
-            Fait* faitCourant = faits;
+        while (premisses != NULL) {Fait* faitCourant = faits;
             int faitTrouve = 0;
 
             while (faitCourant != NULL) {
@@ -174,39 +217,28 @@ int main() {
         return EXIT_FAILURE;
     }
 
-    Rules* listeRegles = NULL;
-
-    char conclusion[50];
-    while (fscanf(fichier, "%s", conclusion) == 1) {
-        ajouterRegle(&listeRegles, conclusion);
-
-        char fait[50];
-        while (fscanf(fichier, "%s", fait) == 1 && strcmp(fait, "->") != 0) {
-            ajouterFait(listeRegles, fait);
-        }
-    }
-
-    fclose(fichier);
-
     Fait* faits = NULL;
     int nombreFaits;
     printf("Entrez le nombre de faits : ");
     scanf("%d", &nombreFaits);
 
+    char* ligne = convertionRegles(fichier);
+    Rules* listeRegles = initRegle();
+    listeRegles = lireRegles(listeRegles, ligne);
+
+    fclose(fichier);
+
     for (int i = 0; i < nombreFaits; i++) {
         char fait[50];
         printf("Entrez le fait %d : ", i + 1);
         scanf("%s", fait);
-        Fait* nouveauFait = initFait(fait);
-        nouveauFait->suivant = faits;
-        faits = nouveauFait;
+        ajouterFait(listeRegles, nombreFaits);
     }
 
     afficherFaits(faits);
     afficherRegles(listeRegles);
     evaluerFaits(faits, listeRegles);
 
-    libererFaits(faits);
     libererRegles(listeRegles);
 
     return EXIT_SUCCESS;
