@@ -18,14 +18,16 @@ void loadRules(const char *filename) {
         Rule *current_rule = &rules[rules_count++];
         current_rule->conditions_count = 0;
 
-        // Tokenize the line to read conditions
+        // Tokeniser la ligne pour lire les conditions
+        // Chaque condition est séparée par un espace et fait partie de l'opération logique ET
         char *token = strtok(line, " ,->\n");
         while (token && *token != '>' && current_rule->conditions_count < MAX_CONDITIONS) {
+            // Chaque condition est stockée individuellement
             current_rule->conditions[current_rule->conditions_count++] = token[0];
             token = strtok(NULL, " ,->\n");
         }
 
-        // Read the conclusion
+        // Lire la conclusion de la règle
         token = strtok(NULL, " ,->\n");
         if (token) {
             current_rule->conclusion = *token;

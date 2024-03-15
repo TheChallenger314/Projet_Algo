@@ -8,6 +8,7 @@ void inputFacts() {
     char fact;
     int state;
     printf("Enter your facts (e.g., a 1 for fact 'a' is true, a 0 for fact 'a' is false):\n");
+    printf("La base de faits est la suivante : a b c d e f g h x\n");
     // Implémentez la logique de saisie des faits ici
     while (1) {
         scanf(" %c", &fact);
