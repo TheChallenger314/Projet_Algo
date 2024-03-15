@@ -115,39 +115,46 @@ void forwardChaining(KnowledgeBase *kb) {
 }
 
 
-bool backwardChaining(KnowledgeBase *kb, const char *goal) {
-    if (factExists(kb, goal)) {
-        // Le but est déjà un fait connu.
-        printf("Le fait '%s' est déjà connu.\n", goal);
-        return true;
+int backwardChaining(char* goal, Fact* facts, Rule* rules) {
+    // Vérifier si le but est déjà un fait
+    Fact* currentFact = facts;
+    while (currentFact != NULL) {
+        if (strcmp(currentFact->description, goal) == 0) {
+            printf("Le fait '%s' est déjà connu.\n", goal);
+            return 1;
+        }
+        currentFact = currentFact->next;
     }
-
-    // On commence par parcourir toutes les règles pour trouver celles qui ont 'goal' comme conclusion.
-    for (Rule *rule = kb->rules; rule != NULL; rule = rule->next) {
-        if (strcmp(rule->conclusion, goal) == 0) {
-            // Pour chaque règle trouvée, on vérifie récursivement si chaque hypothèse peut être déduite.
-            bool allHypothesesVerified = true;
-            for (int i = 0; i < rule->hypothesisCount; ++i) {
-                if (!backwardChaining(kb, rule->hypothesis[i])) {
-                    allHypothesesVerified = false;
+ 
+    // Parcourir les règles pour voir si le but peut être prouvé
+    Rule* currentRule = rules;
+    while (currentRule != NULL) {
+        if (strstr(currentRule->conclusion, goal) != NULL) {
+            int conditionsProuvees = 1;
+            char* condition = strtok(currentRule->condition, " ");
+            while (condition != NULL) {
+                if (!backwardChaining(condition, facts, rules)) {
+                    conditionsProuvees = 0;
                     break;
                 }
+                condition = strtok(NULL, " ");
             }
-            if (allHypothesesVerified) {
-                // Si toutes les hypothèses peuvent être déduites, alors la règle est vérifiée.
-                printf("Pour obtenir '%s', les couleurs de base nécessaires sont: ", goal);
-                for (int i = 0; i < rule->hypothesisCount; ++i) {
-                    printf("%s ", rule->hypothesis[i]);
+            if (conditionsProuvees) {
+                printf("Le fait '%s' est prouvé par les hypothèses : ", goal);
+                char* condition = strtok(currentRule->condition, " ");
+                while (condition != NULL) {
+                    printf("'%s' ", condition);
+                    condition = strtok(NULL, " ");
                 }
                 printf("\n");
-                return true;
+                return 1;
             }
         }
+        currentRule = currentRule->next;
     }
-
-    // Si aucune règle ne permet de déduire le but, afficher un message et retourner 'false'.
-    printf("La couleur '%s' ne peut pas être déduite avec la base de connaissances actuelle.\n", goal);
-    return false;
+ 
+    printf("Le fait '%s' ne peut pas être prouvé avec les règles actuelles.\n", goal);
+    return 0;
 }
 
 
