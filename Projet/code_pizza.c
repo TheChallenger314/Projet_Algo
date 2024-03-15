@@ -186,9 +186,9 @@ void menu()
     Rule* rules = lireRegle(rulesFile);
     int choix = 0;
     printf("============================================================================================\n");
-    printf("\t\t1. Chainage Avant \n\t\t2. Chainage Arriere \n\t\t3. Ajouter un Fait \n\t\t4. Ajouter un Regle\n\t\t0.Quitter");
+    printf("\t\t1. Chainage Avant \n\t\t2. Chainage Arriere \n\t\t3. Ajouter un Fait \n\t\t4. Ajouter un Regle\n\t\t0.Quitter\n");
     printf("============================================================================================\n");
-    scanf("%s",&choix);
+    scanf("%d",&choix);
     switch (choix)
     {
         case 1:
@@ -204,6 +204,10 @@ void menu()
             backwardChaining(goal, facts, rules);
             break;
         case 3:
+            break;
+        case 0:
+            printf("EXIT\n");
+            break;
     
     }
     libereFait(facts);
