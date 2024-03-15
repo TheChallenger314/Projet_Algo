@@ -9,7 +9,9 @@
                 "-g",
                 "${file}",
                 "-o",
-                "${fileDirname}/${fileBasenameNoExtension}"
+                "${fileDirname}/${fileBasenameNoExtension}",
+                "-lglut", // Ajoutez cette ligne pour lier avec FreeGLUT
+                "-lm" // Ajoutez cette ligne pour lier avec la bibliothèque mathématique (libm)
             ],
             "options": {
                 "cwd": "${fileDirname}"
