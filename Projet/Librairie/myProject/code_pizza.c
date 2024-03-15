@@ -8,12 +8,12 @@ typedef struct Fact {
     struct Fact* next;
 } Fact;
 typedef struct Condition{
-    char condition[100];
+    char cond[100]; //taille 100
     struct Condition *suiv;
 }Condition;
 // Structure de règle
 typedef struct Rule {
-    Condition condition; // Assumons une longueur maximale de 100 caractères pour la condition de la règle
+    Condition *condition; // Assumons une longueur maximale de 100 caractères pour la condition de la règle
     char conclusion[100]; // Assumons une longueur maximale de 100 caractères pour la conclusion de la règle
     struct Rule* next;
 } Rule;
@@ -23,20 +23,37 @@ Fact* facts = NULL;
 FILE* factsFile = NULL;
 Rule* rules = NULL;
 // Fonction pour ajouter un fait à la liste chaînée
-void addFact(Fact** head, char* description) {
-    Fact* newFact = (Fact*)malloc(sizeof(Fact));
+
+Fact * init_fact(){
+    Fact *newfact = (Fact*)malloc(sizeof(Fact));
+    int i=0;
+    strcpy(newfact->description," ");
+    newfact->next =NULL;
+    return newfact;
+}
+Fact *addFact(Fact* head, char* description) {
+    Fact* newFact = head;
+    
     if (newFact == NULL) {
-        fprintf(stderr, "Erreur d'allocation de mémoire\n");
-        exit(EXIT_FAILURE);
+        newFact =init_fact();
+        strcpy(newFact->description, description);
+        return newFact;
     }
+    while(newFact != NULL)
+    {
+        newFact=newFact->next;
+    }
+    newFact=init_fact();
     strcpy(newFact->description, description);
-    newFact->next = *head;
-    *head = newFact;
+    return newFact;
 }
 
 // Fonction pour ajouter une règle à la liste chaînée
+
 void addRule(Rule** head, Condition* condition, char* conclusion) {
     Rule* newRule = (Rule*)malloc(sizeof(Rule));
+    newRule->condition = (Condition*)malloc(sizeof(Condition));
+    strcpy(newRule->condition->cond,"");
     if (newRule == NULL) {
         fprintf(stderr, "Erreur d'allocation de mémoire\n");
         exit(EXIT_FAILURE);
@@ -45,12 +62,12 @@ void addRule(Rule** head, Condition* condition, char* conclusion) {
     Condition* currentCondition = condition;
     char conditionStr[100] = ""; // Initialiser la chaîne de caractères pour stocker la condition
     while (currentCondition != NULL) {
-        strcat(conditionStr, currentCondition->condition);
+        strcat(conditionStr, currentCondition->cond);
         strcat(conditionStr, " ");
         currentCondition = currentCondition->suiv;
     }
 
-    strcpy(newRule->condition->condition, conditionStr);
+    strcpy(newRule->condition->cond, conditionStr);
     strcpy(newRule->conclusion, conclusion);
     newRule->next = *head;
     *head = newRule;
@@ -63,8 +80,8 @@ void forwardChaining(Fact* facts, Rule* rules) {
     while (currentFact != NULL) {
         Rule* currentRule = rules;
         while (currentRule != NULL) {
-                printf("Condition: %s est vraie, conclusion: %s\n", currentRule->condition->condition, currentRule->conclusion);
-            if (strstr(currentFact->description, currentRule->condition->condition) != NULL) {
+                printf("Condition: %s est vraie, conclusion: %s\n", currentRule->condition->cond, currentRule->conclusion);
+            if (strstr(currentFact->description, currentRule->condition->cond) != NULL) {
                 // Ajouter la conclusion comme un nouveau fait si elle n'existe pas déjà
                 Fact* newFact = facts;
                 int found = 0;
@@ -76,7 +93,7 @@ void forwardChaining(Fact* facts, Rule* rules) {
                     newFact = newFact->next;
                 }
                 if (!found) {
-                    addFact(&facts, currentRule->conclusion);
+                    addFact(facts, currentRule->conclusion);
                 }
             }
             currentRule = currentRule->next;
@@ -102,9 +119,9 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
     while (currentRule != NULL) {
         if (strstr(currentRule->conclusion, goal) != NULL) {
             // Vérifier si les conditions de la règle peuvent être prouvées
-            printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition, currentRule->conclusion);
+            printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition->cond, currentRule->conclusion);
             int conditionsProuvees = 1;
-            char* token = strtok(currentRule.condition->condition, " ");
+            char* token = strtok(currentRule->condition->cond, " ");
             while (token != NULL) {
                 if (!backwardChaining(token, facts, rules)) {
                     conditionsProuvees = 0;
@@ -114,7 +131,7 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
             }
             if (conditionsProuvees) {
                 printf("Goal: %s est prouvé\n", goal); // Afficher que le goal est prouvé
-                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition->condition, currentRule->conclusion);
+                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition->cond, currentRule->conclusion);
                 return 1; // Si toutes les conditions de la règle sont prouvées, la règle peut prouver le goal
             }
         }
@@ -135,7 +152,7 @@ void print_rules(Rule* rules) {
         printf("Rule %d:\n", count);
         printf("Conditions:\n");
         // Affichage des conditions
-        char* token = strtok(current->condition->condition, " ");
+        char* token = strtok(current->condition->cond, " ");
         while (token != NULL) {
             printf("%s\n", token);
             token = strtok(NULL, " ");
@@ -159,6 +176,7 @@ FILE *ouvrir_fichier(char *filename) {
 
 Fact *lireFait(FILE *factsFile) {
     Fact* facts = NULL;
+    Fact* newfacts = NULL;
     char line[100];
     while (fgets(line, sizeof(line), factsFile) != NULL) {
         // Supprimer le caractère de saut de ligne à la fin
@@ -167,9 +185,14 @@ Fact *lireFait(FILE *factsFile) {
         // Ignorer les lignes vides
         if (strcmp(line, "") == 0)
             continue;
-
-        // Ajouter le fait à la liste chaînée
-        addFact(&facts, line);
+        newfacts=addFact(facts, line);
+        newfacts=newfacts->next;
+    }
+    facts= newfacts;
+    while(facts != NULL)
+    {
+        printf("%s",facts->description);
+        facts=facts->next;
     }
     fclose(factsFile);
     return facts;
@@ -179,9 +202,11 @@ Fact *lireFait(FILE *factsFile) {
 Rule *lireRegle(FILE *rulesFile) {
     Rule *rules = NULL;
     char ruleLine[200];
+    
     while (fgets(ruleLine, sizeof(ruleLine), rulesFile) != NULL) {
-        char condition[100], conclusion[100];
-        if (sscanf(ruleLine, "%99s %99[^;];", condition, conclusion) == 2) {
+        Condition *condition=(Condition*)malloc(sizeof(Condition));
+        char conclusion[100]="";
+        if (sscanf(ruleLine, "%99s %99[^;];", condition->cond, conclusion) == 2) {
             addRule(&rules, condition, conclusion);
         }
     }
@@ -234,14 +259,14 @@ int menu() {
             char description[100]; // Modification pour éviter les dépassements de tampon
             printf("Quel est le nouveau fait ?\n");
             scanf("%s", description);
-            addFact(&facts, description);
+            addFact(facts, description);
             break;
         }
         case 4: {
-            char condition[100]; // Modification pour éviter les dépassements de tampon
+            Condition *condition=(Condition*)malloc(sizeof(Condition));
             char conclusion[100];
             printf("Quelle est la nouvelle regle ?\n");
-            scanf("%s %s -> %s", condition, condition, conclusion);
+            scanf("%s %s -> %s", condition->cond, condition->suiv->cond, conclusion);
             addRule(&rules, condition, conclusion);
             break;
         }
