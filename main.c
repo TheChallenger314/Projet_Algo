@@ -73,7 +73,7 @@ bool fact_exists_in_facts(const char* fact_description, Fact* facts) {
 }
 
 void loadRulesFromFile(Rule** rules) {
-    FILE* file = fopen("pizza.kbs", "r");
+    FILE* file = fopen("regles.kbs", "r");
     if (!file) {
         perror("Impossible d'ouvrir le fichier de règles");
         exit(EXIT_FAILURE);
@@ -141,32 +141,48 @@ void forwardChaining(Fact** facts, Rule* rules) {
 
 
 // Chaînage arrière
-int backwardChaining(char* goal, Fact* facts, Rule* rules) {
+int backwardChaining(char* goal, Fact* facts, Rule* rules, Fact* checkedFacts) {
     // Vérifier si le goal est déjà un fait dans les faits
-    bool conditionsProuvees = true;
     Fact* currentFact = facts;
     while (currentFact != NULL) {
-        if (strstr(currentFact->description, goal) != NULL) {
+        if (strstr(goal, currentFact->description) != NULL) {
             printf("Goal: %s est vrai\n", goal);
             return 1; // Le goal est déjà un fait présent, donc il est vrai
         }
         currentFact = currentFact->next;
     }
 
+    // Vérifier si le goal a déjà été vérifié pour éviter les boucles infinies
+    Fact* checkedFact = checkedFacts;
+    while (checkedFact != NULL) {
+        if (strstr(goal, checkedFact->description) != NULL) {
+            printf("Goal: %s a déjà été vérifié, évitant les boucles infinies.\n", goal);
+            return 0; // Éviter la vérification répétée pour éviter les boucles infinies
+        }
+        checkedFact = checkedFact->next;
+    }
+
+    // Ajouter le goal à la liste des faits vérifiés
+    addFact(&checkedFacts, goal);
+
     // Parcourir les règles pour voir si le goal peut être prouvé
     Rule* currentRule = rules;
     while (currentRule != NULL) {
         if (strstr(currentRule->conclusion, goal) != NULL) {
-           printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition->condition, currentRule->conclusion);
+            printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition->condition, currentRule->conclusion);
+            
             // Vérifier si les conditions de la règle peuvent être prouvées
             char* token = strtok(currentRule->condition->condition, " ");
+            bool conditionsProuvees = true;
             while (token != NULL) {
-                if (!backwardChaining(token, facts, rules)) {
-                    conditionsProuvees = 0;
+                if (!backwardChaining(token, facts, rules, checkedFacts)) {
+                    conditionsProuvees = false;
+                    printf("La condition %s dans la règle %s -> %s ne peut pas être prouvée.\n", token, currentRule->condition->condition, currentRule->conclusion);
                     break; // Si une condition ne peut pas être prouvée, arrêter la vérification des autres conditions
                 }
                 token = strtok(NULL, " ");
             }
+
             if (conditionsProuvees) {
                 printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition->condition, currentRule->conclusion);
                 printf("Goal: %s est prouvé\n", goal); // Afficher que le goal est prouvé
@@ -180,6 +196,12 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
     return 0; // Si aucune règle ne peut prouver le goal
 }
 
+
+
+
+
+
+ 
 // Fonction pour afficher les règles
 void print_rules(Rule* rules) {
     printf("Liste des règles :\n");
@@ -257,8 +279,9 @@ void handleUserInput(Fact** facts, Rule** rules) {
                 break;
             case 3:
                 printf("Entrez le goal pour le chaînage arrière : ");
-                scanf("%99s", goal);
-                backwardChaining(goal, *facts, *rules);
+                fgets(goal, sizeof(goal), stdin);
+                goal[strcspn(goal, "\n")] = 0; // Supprimer le saut de ligne
+                backwardChaining(goal, *facts, *rules, NULL); // NULL car il n'y a pas encore de faits vérifiés
                 break;
             case 4:
                 printf("Entrez le fait à ajouter : ");
@@ -284,6 +307,7 @@ void handleUserInput(Fact** facts, Rule** rules) {
         }
     }
 }
+
 
 int main() {
     Fact* facts = NULL;
