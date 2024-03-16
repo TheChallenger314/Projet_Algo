@@ -73,7 +73,7 @@ bool fact_exists_in_facts(const char* fact_description, Fact* facts) {
 }
 
 void loadRulesFromFile(Rule** rules) {
-    FILE* file = fopen("regles.kbs", "r");
+    FILE* file = fopen("pizza.kbs", "r");
     if (!file) {
         perror("Impossible d'ouvrir le fichier de règles");
         exit(EXIT_FAILURE);
@@ -165,7 +165,7 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
         }
         currentFact = currentFact->next;
     }
- 
+
     // Parcourir les règles pour voir si le goal peut être prouvé
     Rule* currentRule = rules;
     while (currentRule != NULL) {
@@ -188,11 +188,11 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
         }
         currentRule = currentRule->next;
     }
- 
+
     printf("Goal: %s ne peut pas être prouvé\n", goal);
     return 0; // Si aucune règle ne peut prouver le goal
 }
- 
+
 // Fonction pour afficher les règles
 void print_rules(Rule* rules) {
     printf("Liste des règles :\n");
@@ -311,6 +311,3 @@ int main() {
 
     return 0;
 }
-
-
- 

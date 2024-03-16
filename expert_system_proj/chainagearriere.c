@@ -1,6 +1,9 @@
 #include "expert_system.h"
 
+// Chaînage arrière
 int backwardChaining(char* goal, Fact* facts, Rule* rules) {
+    // Vérifier si le goal est déjà un fait dans les faits
+    bool conditionsProuvees = true;
     Fact* currentFact = facts;
     while (currentFact != NULL) {
         if (strstr(currentFact->description, goal) != NULL) {
@@ -14,10 +17,9 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
     Rule* currentRule = rules;
     while (currentRule != NULL) {
         if (strstr(currentRule->conclusion, goal) != NULL) {
-            printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition, currentRule->conclusion);
+           printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition->condition, currentRule->conclusion);
             // Vérifier si les conditions de la règle peuvent être prouvées
-            int conditionsProuvees = 1;
-            char* token = strtok(currentRule->condition, " ");
+            char* token = strtok(currentRule->condition->condition, " ");
             while (token != NULL) {
                 if (!backwardChaining(token, facts, rules)) {
                     conditionsProuvees = 0;
@@ -26,7 +28,7 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
                 token = strtok(NULL, " ");
             }
             if (conditionsProuvees) {
-                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition, currentRule->conclusion);
+                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition->condition, currentRule->conclusion);
                 printf("Goal: %s est prouvé\n", goal); // Afficher que le goal est prouvé
                 return 1; // Si toutes les conditions de la règle sont prouvées, la règle peut prouver le goal
             }
@@ -36,4 +38,17 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
 
     printf("Goal: %s ne peut pas être prouvé\n", goal);
     return 0; // Si aucune règle ne peut prouver le goal
+}
+
+// Fonction pour afficher les règles
+void print_rules(Rule* rules) {
+    printf("Liste des règles :\n");
+    Rule* current = rules;
+    int count = 0;
+    while (current != NULL) {
+        count++;
+        printf("n°%d) ", count);
+        printf("%s -> %s\n", current->condition->condition, current->conclusion);
+        current = current->next;
+    }
 }
