@@ -2,7 +2,14 @@
 #define LOGIQUE_KNOWLEDGE_BASE_H_
 
 #include <stdbool.h>
-
+#include <stdlib.h>
+#include <stdio.h>
+#include "GfxLib.h"
+#include <string.h>
+#include "ESLib.h"
+#include "main.h"
+#define LargeurFenetre 800
+#define HauteurFenetre 600
 typedef struct Fact {
     char description[100];
     struct Fact* next;

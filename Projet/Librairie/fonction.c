@@ -3,6 +3,12 @@
 #include <string.h>
 #include <stdbool.h>
 #include "main.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include "GfxLib.h"
+#include <string.h>
+#include "ESLib.h"
+#include "main.h"
 
 void addFact(Fact** head, char* description) {
     Fact* newFact = (Fact*)malloc(sizeof(Fact));
@@ -178,7 +184,8 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
     printf("Goal: %s ne peut pas être prouvé\n", goal);
     return 0; // Si aucune règle ne peut prouver le goal
 }
- 
+
+
 // Fonction pour afficher les règles
 void print_rules(Rule* rules) {
     printf("Liste des règles :\n");

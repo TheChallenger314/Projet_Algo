@@ -12,4 +12,3 @@ a b e -> d;
 a c -> d;
 x -> f;
 e d -> a;
-a -> z;
