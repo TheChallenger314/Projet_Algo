@@ -90,7 +90,7 @@ void gestionEvenement(EvenementGfx evenement) {
                 int y = ordonneeSouris();
                 if (x >= LargeurFenetre / 2 - 100 && x <= LargeurFenetre / 2 + 100 && y >= 50 && y <= 150) {
                     strcpy(texteAAfficher, "Affiche regle clique !");
-                    print_rules_on_screen(rules);
+                    print_rules(rules);
                 } else if (x >= LargeurFenetre / 2 - 100 && x <= LargeurFenetre / 2 + 100 && y >= 180 && y <= 280) {
                     strcpy(texteAAfficher, "Chainage avant clique !");
                     forwardChaining(&facts, rules);
