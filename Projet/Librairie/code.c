@@ -3,13 +3,16 @@
 #include "GfxLib.h"
 #include <string.h>
 #include "ESLib.h"
-
+#include "main.h"
+#include "fonction.c"
 #define LargeurFenetre 800
 #define HauteurFenetre 600
 
 char texteAAfficher[100] = ""; // Variable pour stocker le texte à afficher
 char texteAEcrire[100] = ""; // Variable pour stocker le texte à écrire
-
+Fact* facts = NULL;
+Rule* rules = NULL;
+char goal[100], condition[100], conclusion[100];
 void dessineBouton(char *texte, int x1, int y1, int x2, int y2) {
     // Dessine le rectangle du bouton
     couleurCourante(0, 0, 0);
@@ -64,16 +67,35 @@ void gestionEvenement(EvenementGfx evenement) {
                 int y = ordonneeSouris();
                 if (x >= LargeurFenetre/2 - 100 && x <= LargeurFenetre/2 + 100 && y >= 50 && y <= 150) {
                     strcpy(texteAAfficher, "Affiche regle clique !");
+                    print_rules(rules);
                 } else if (x >= LargeurFenetre/2 - 100 && x <= LargeurFenetre/2 + 100 && y >= 180 && y <= 280) {
                     strcpy(texteAAfficher, "Chainage avant clique !");
+                    forwardChaining(&facts, rules);
                 } else if (x >= LargeurFenetre/2 - 300 && x <= LargeurFenetre/2 - 100 && y >= 50 && y <= 150) {
                     strcpy(texteAAfficher, "Chainage arriere clique !");
+                    printf("Entrez le goal pour le chaînage arrière : ");
+                    scanf("%99s", goal);
+                    backwardChaining(goal, facts, rules);
                 } else if (x >= LargeurFenetre/2 + 100 && x <= LargeurFenetre/2 + 300 && y >= 50 && y <= 150) {
                     strcpy(texteAAfficher, "Quitter&sauvegarder clique !");
+                    print_rules_to_file(rules,"couleur.kbs");
+                    termineBoucleEvenements();
                 } else if (x >= LargeurFenetre/2 - 300 && x <= LargeurFenetre/2 - 100 && y >= 180 && y <= 280) {
                     strcpy(texteAAfficher, "Ajouter un Fait clique !");
+                    printf("Entrez le fait à ajouter : ");
+                    if (fgets(goal, sizeof(goal), stdin) != NULL) { 
+                         goal[strcspn(goal, "\n")] = 0;
+                         addFact(&facts, goal);
+                    }
                 } else if (x >= LargeurFenetre/2 + 100 && x <= LargeurFenetre/2 + 300 && y >= 180 && y <= 280) {
                     strcpy(texteAAfficher, "Ajouter une regle clique !");
+                    printf("Entrez la condition de la nouvelle règle : ");
+                    fgets(condition, sizeof(condition), stdin);
+                    condition[strcspn(condition, "\n")] = 0;
+                    printf("Entrez la conclusion de la nouvelle règle : ");
+                    fgets(conclusion, sizeof(conclusion), stdin);
+                    conclusion[strcspn(conclusion, "\n")] = 0;
+                    addRule(&rules, condition, conclusion);
                 }
             }
             break;
@@ -88,11 +110,26 @@ void gestionEvenement(EvenementGfx evenement) {
             break;
     }
 }
+void initialisation()
+{
+    int nbFaits;
+    printf("Entrez le nombre de faits : ");
+    scanf("%d", &nbFaits);
+    while (getchar() != '\n'); // Nettoyer le buffer d'entrée après la lecture du nombre
 
+    for (int i = 0; i < nbFaits; i++) {
+        char fait[100];
+        printf("Entrez le fait n°%d : ", i + 1);
+        fgets(fait, sizeof(fait), stdin);
+        fait[strcspn(fait, "\n")] = 0;
+        addFact(&facts, fait);
+    }
+}
 int main(int argc, char **argv) {
     initialiseGfx(argc, argv);
-    prepareFenetreGraphique("C'est notre Projet", LargeurFenetre, HauteurFenetre);
-
+    loadRulesFromFile(&rules);
+    initialisation();
+    prepareFenetreGraphique("Projet de moteur d'inference", LargeurFenetre, HauteurFenetre);
     lanceBoucleEvenements();
     return 0;
 }
