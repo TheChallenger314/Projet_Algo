@@ -13,13 +13,14 @@
 void addFact(Fact** head, char* description) {
     Fact* newFact = (Fact*)malloc(sizeof(Fact));
     if (newFact == NULL) {
-        perror("Erreur d'allocation de mémoire");
+        fprintf(stderr, "Erreur d'allocation de mémoire pour les faits.\n");
         exit(EXIT_FAILURE);
     }
     strcpy(newFact->description, description);
     newFact->next = *head;
     *head = newFact;
 }
+
 
 void addRule(Rule** head, char* condition, char* conclusion) {
     Rule* newRule = (Rule*)malloc(sizeof(Rule));
@@ -52,7 +53,6 @@ void addRule(Rule** head, char* condition, char* conclusion) {
 }
 
 
-
 bool fact_exists_in_facts(const char* fact_description, Fact* facts) {
     while (facts != NULL) {
         if (strcmp(facts->description, fact_description) == 0) {
@@ -65,7 +65,6 @@ bool fact_exists_in_facts(const char* fact_description, Fact* facts) {
 
 void loadRulesFromFile(Rule** rules) {
     FILE* file = fopen("couleur.kbs", "r");
-    
     if (!file) {
         perror("Impossible d'ouvrir le fichier de règles");
         exit(EXIT_FAILURE);
@@ -96,9 +95,20 @@ void forwardChaining(Fact** facts, Rule* rules) {
         Rule* current_rule = rules;
         bool facts_added_in_iteration = false; // Indicateur pour vérifier si des faits ont été ajoutés dans cette itération
         while (current_rule != NULL) {
-            // Vérifier si la condition de la règle est satisfaite par les faits actuels
-            if (fact_exists_in_facts(current_rule->condition->condition, *facts)) {
-                // Si la conclusion n'est pas déjà un fait, ajouter la conclusion comme nouveau fait
+            // Vérifier si toutes les conditions de la règle sont satisfaites par les faits actuels
+            bool all_conditions_satisfied = true;
+            char* token = strtok(current_rule->condition->condition, " ");
+            while (token != NULL) {
+                if (!fact_exists_in_facts(token, *facts)) {
+                    all_conditions_satisfied = false;
+                    break;
+                }
+                token = strtok(NULL, " ");
+            }
+
+            // Si toutes les conditions sont satisfaites, ajouter la conclusion comme nouveau fait
+            if (all_conditions_satisfied) {
+                // Si la conclusion n'est pas déjà un fait, l'ajouter
                 if (!fact_exists_in_facts(current_rule->conclusion, *facts)) {
                     addFact(facts, current_rule->conclusion);
                     printf("Nouveau fait ajouté : %s\n", current_rule->conclusion);
@@ -111,32 +121,7 @@ void forwardChaining(Fact** facts, Rule* rules) {
 
         // Si aucun nouveau fait n'a été ajouté dans cette itération, cela signifie que le chaînage est terminé
         if (!facts_added_in_iteration) {
-            // Si aucune nouvelle information n'est ajoutée lors de la première itération,
-            // évaluons à nouveau toutes les règles pour déduire d'autres faits initiaux
-            if (iteration == 2) {
-                current_rule = rules;
-                while (current_rule != NULL) {
-                    // Vérifiez si les conditions de cette règle sont satisfaites par les faits initiaux fournis
-                    bool all_conditions_satisfied = true;
-                    char* token = strtok(current_rule->condition->condition, " ");
-                    while (token != NULL) {
-                        if (!fact_exists_in_facts(token, *facts)) {
-                            all_conditions_satisfied = false;
-                            break;
-                        }
-                        token = strtok(NULL, " ");
-                    }
-                    // Si toutes les conditions sont satisfaites, ajoutez la conclusion de la règle comme nouveau fait
-                    if (all_conditions_satisfied) {
-                        addFact(facts, current_rule->conclusion);
-                        printf("Nouveau fait ajouté : %s\n", current_rule->conclusion);
-                        new_fact_added = true;
-                    }
-                    current_rule = current_rule->next;
-                }
-            } else {
-                break;
-            }
+            break;
         }
     }
 
@@ -184,8 +169,6 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
     printf("Goal: %s ne peut pas être prouvé\n", goal);
     return 0; // Si aucune règle ne peut prouver le goal
 }
-
-
 // Fonction pour afficher les règles
 void print_rules(Rule* rules) {
     printf("Liste des règles :\n");
@@ -218,9 +201,10 @@ void freeFacts(Fact* head) {
     while (head != NULL) {
         tmp = head;
         head = head->next;
-        free(tmp);
+        free(tmp); // Libérer le nœud
     }
 }
+
 
 void freeRules(Rule* head) {
     Rule* tmp;
