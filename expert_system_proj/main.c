@@ -1,16 +1,17 @@
 #include "expert_system.h"
 
 int main() {
-    Fact* facts = NULL;
-    Rule* rules = NULL;
+    Fait* faits = NULL;
+    Regle* regles = NULL;
 
-    loadRulesFromFile(&rules);
-    // Initialiser les faits et les règles ici si nécessaire
-    handleUserInput(&facts, &rules);
-
-    // Libérer les ressources allouées
-    freeFacts(facts);
-    freeRules(rules);
+    initialiseGfx(argc, argv);
+    chargerReglesDepuisFichier(&regles);
+    initialisation();
+    gererSaisieUtilisateur(&faits, &regles);
+    prepareFenetreGraphique("Projet de moteur d'inference", LargeurFenetre, HauteurFenetre);
+    lanceBoucleEvenements();
+    libererFaits(faits);
+    libererRegles(regles);
 
     return 0;
 }

@@ -1,41 +1,54 @@
 #include "expert_system.h"
 
-// Chaînage arrière
-int backwardChaining(char* goal, Fact* facts, Rule* rules) {
-    // Vérifier si le goal est déjà un fait dans les faits
-    bool conditionsProuvees = true;
-    Fact* currentFact = facts;
-    while (currentFact != NULL) {
-        if (strstr(currentFact->description, goal) != NULL) {
-            printf("Goal: %s est vrai\n", goal);
-            return 1; // Le goal est déjà un fait présent, donc il est vrai
+// Fonction de chaînage arrière qui vérifie si un objectif peut être atteint à partir des faits et règles existants
+int chainageArriere(char* objectif, Fait* faits, Regle* regles, Fait* faitsVerifies) {
+    // Vérifie si l'objectif est déjà un fait
+    Fait* faitCourant = faits;
+    while (faitCourant != NULL) {
+        if (strstr(objectif, faitCourant->description) != NULL) {
+            printf("Objectif: %s est vrai\n", objectif);
+            return 1;
         }
-        currentFact = currentFact->next;
+        faitCourant = faitCourant->suivant;
     }
 
-    // Parcourir les règles pour voir si le goal peut être prouvé
-    Rule* currentRule = rules;
-    while (currentRule != NULL) {
-        if (strstr(currentRule->conclusion, goal) != NULL) {
-           printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition->condition, currentRule->conclusion);
-            // Vérifier si les conditions de la règle peuvent être prouvées
-            char* token = strtok(currentRule->condition->condition, " ");
-            while (token != NULL) {
-                if (!backwardChaining(token, facts, rules)) {
-                    conditionsProuvees = 0;
-                    break; // Si une condition ne peut pas être prouvée, arrêter la vérification des autres conditions
+ // Évite les vérifications répétées pour prévenir les boucles infinies
+    Fait* faitVerifie = faitsVerifies;
+    while (faitVerifie != NULL) {
+        if (strstr(objectif, faitVerifie->description) != NULL) {
+            printf("Objectif: %s a déjà été vérifié, évitant les boucles infinies.\n", objectif);
+            return 0; // Objectif déjà vérifié
+        }
+        faitVerifie = faitVerifie->suivant;
+    }
+
+    ajouterFait(&faitsVerifies, objectif);
+
+    Regle* regleCourante = regles;
+    while (regleCourante != NULL) {
+        if (strstr(regleCourante->conclusion, objectif) != NULL) {
+            printf("Objectif: %s peut être prouvé par la règle: %s -> %s\n", objectif, regleCourante->condition->condition, regleCourante->conclusion);
+
+            char* jeton = strtok(regleCourante->condition->condition, " ");
+            bool conditionsProuvees = true;
+            while (jeton != NULL) {
+                if (!chainageArriere(jeton, faits, regles, faitsVerifies)) {
+                    conditionsProuvees = false;
+                    printf("La condition %s dans la règle %s -> %s ne peut pas être prouvée.\n", jeton, regleCourante->condition->condition, regleCourante->conclusion);
+                    break;
                 }
-                token = strtok(NULL, " ");
+                jeton = strtok(NULL, " ");
             }
+
             if (conditionsProuvees) {
-                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition->condition, currentRule->conclusion);
-                printf("Goal: %s est prouvé\n", goal); // Afficher que le goal est prouvé
-                return 1; // Si toutes les conditions de la règle sont prouvées, la règle peut prouver le goal
+                printf("Conditions prouvées pour la règle: %s -> %s\n", regleCourante->condition->condition, regleCourante->conclusion);
+                printf("Objectif: %s est prouvé\n", objectif);
+                return 1; // Toutes les conditions sont prouvées
             }
         }
-        currentRule = currentRule->next;
+        regleCourante = regleCourante->suivant;
     }
 
-    printf("Goal: %s ne peut pas être prouvé\n", goal);
-    return 0; // Si aucune règle ne peut prouver le goal
+    printf("Objectif: %s ne peut pas être prouvé\n", objectif);
+    return 0; // Objectif ne peut pas être prouvé
 }

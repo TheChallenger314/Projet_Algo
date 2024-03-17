@@ -1,4 +1,15 @@
-#include "expert_system.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include "GfxLib.h"
+#include <string.h>
+#include "ESLib.h"
+#include "main.h"
+#include "fonction.c"
+
+char texteAAfficher[2000] = ""; // Variable pour stocker le texte à afficher
+Fact* facts = NULL;
+Rule* rules = NULL;
+char goal[100], condition[100], conclusion[100];
 
 void dessineBouton(char *texte, int x1, int y1, int x2, int y2) {
     // Dessine le rectangle du bouton
@@ -12,14 +23,14 @@ void dessineBouton(char *texte, int x1, int y1, int x2, int y2) {
     afficheChaine(texte, 15, (x1 + x2) / 2 - (strlen(texte) * 3), (y1 + y2) / 2);
 }
 
-void AfficherReglesSurEcran(Regle* regles) {
+void print_rules_on_screen(Rule* rules) {
     effaceFenetre(255, 255, 255); // Efface la fenêtre avant d'afficher les règles
 
     // Affiche le titre
     couleurCourante(0, 0, 0);
     afficheChaine("Liste des règles :", 20, 100, HauteurFenetre - 50);
 
-    Regle* current = rules;
+    Rule* current = rules;
     int count = 0;
     int y = HauteurFenetre - 100; // Position verticale de la première règle
 
@@ -34,6 +45,8 @@ void AfficherReglesSurEcran(Regle* regles) {
         current = current->next;
     }
 }
+
+
 
 void gestionEvenement(EvenementGfx evenement) {
     switch (evenement) {
@@ -134,4 +147,13 @@ void initialisation() {
         fait[strcspn(fait, "\n")] = 0;
         addFact(&facts, fait);
     }
+}
+
+int main(int argc, char **argv) {
+    initialiseGfx(argc, argv);
+    loadRulesFromFile(&rules);
+    initialisation();
+    prepareFenetreGraphique("Projet de moteur d'inference", LargeurFenetre, HauteurFenetre);
+    lanceBoucleEvenements();
+    return 0;
 }

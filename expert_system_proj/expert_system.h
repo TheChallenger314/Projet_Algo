@@ -5,34 +5,43 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdbool.h>
+#include "GfxLib.h"
+#include "ESLib.h"
+#define LargeurFenetre 800
+#define HauteurFenetre 600
 
-typedef struct Fact {
+// Définition d'une structure pour les faits
+typedef struct Fait {
     char description[100];
-    struct Fact* next;
-} Fact;
+    struct Fait* suivant;
+} Fait;
 
+// Définition d'une structure pour les conditions des règles
 typedef struct Condition {
     char condition[100];
-    struct Condition* suiv;
+    struct Condition* suivant;
 } Condition;
 
-typedef struct Rule {
+
+// Définition d'une structure pour les règles
+typedef struct Regle {
     Condition* condition;
     char conclusion[100];
-    struct Rule* next;
-} Rule;
+    struct Regle* suivant;
+} Regle;
 
 // Prototypes de fonctions
-void addFact(Fact** head, char* description);
-void addRule(Rule** head, char* condition, char* conclusion);
-void forwardChaining(Fact** facts, Rule* rules);
-int backwardChaining(char* goal, Fact* facts, Rule* rules);
-void print_rules(Rule* rules);
-bool fact_exists_in_facts(const char* fact_description, Fact* facts);
-void loadRulesFromFile(Rule** rules);
-void freeFacts(Fact* head);
-void freeRules(Rule* head);
-void displayMenu();
-void handleUserInput(Fact** facts, Rule** rules);
+void ajouterFait(Fait** tete, char* description);
+void ajouterRegle(Regle** tete, char* condition, char* conclusion);
+void chainageAvant(Fait** faits, Regle* regles);
+int chainageArriere(char* objectif, Fait* faits, Regle* regles, Fait* faitsVerifies);
+void afficherRegles(Regle* regles);
+bool faitExisteDansFaits(const char* descriptionFait, Fait* faits);
+void chargerReglesDepuisFichier(Regle** regles);
+void libererFaits(Fait* tete);
+void libererRegles(Regle* tete);
+void sauvegarderReglesDansFichier(Regle* regles);
+void afficherMenu();
+void gererSaisieUtilisateur(Fait** faits, Regle** regles);
 
 #endif // EXPERT_SYSTEM_H
