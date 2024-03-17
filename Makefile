@@ -1,16 +1,14 @@
 CC=gcc
 CFLAGS=-Wall -g
-SOURCES=main.c
-EXECUTABLE=main
+
+SOURCES=main.c menu.c chainageavant.c chainagearriere.c affichage.c
+EXECUTABLE=expert_system
 
 all:
 	$(CC) $(CFLAGS) $(SOURCES) -o $(EXECUTABLE)
 
-clean:
-	rm -f $(EXECUTABLE)
-	
-gfx: code.o libisentlib.a
-	gcc -Wall code.o -o code libisentlib.a -lm -lglut -lGL -lX11
+gfx: main.o libisentlib.a
+	gcc -Wall main.o -o main libisentlib.a -lm -lglut -lGL -lX11
 
 exemple: exemple.o libisentlib.a
 	gcc -Wall exemple.o -o exemple libisentlib.a -lm -lglut -lGL -lX11

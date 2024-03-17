@@ -1,14 +1,10 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include "GfxLib.h"
-#include <string.h>
-#include "ESLib.h"
-#include "main.h"
-#include "fonction.c"
+#include "expert_system.h"
 
 char texteAAfficher[2000] = ""; // Variable pour stocker le texte à afficher
-Fact* facts = NULL;
-Rule* rules = NULL;
+Fait* faits = NULL;
+Regle* regles = NULL;
+Regle** regle = NULL;
+Fait* faitsVerifies = NULL;
 char goal[100], condition[100], conclusion[100];
 
 void dessineBouton(char *texte, int x1, int y1, int x2, int y2) {
@@ -23,14 +19,14 @@ void dessineBouton(char *texte, int x1, int y1, int x2, int y2) {
     afficheChaine(texte, 15, (x1 + x2) / 2 - (strlen(texte) * 3), (y1 + y2) / 2);
 }
 
-void print_rules_on_screen(Rule* rules) {
+void AfficherRegleSurEcran(Regle* regles) {
     effaceFenetre(255, 255, 255); // Efface la fenêtre avant d'afficher les règles
 
     // Affiche le titre
     couleurCourante(0, 0, 0);
     afficheChaine("Liste des règles :", 20, 100, HauteurFenetre - 50);
 
-    Rule* current = rules;
+    Regle* current = regles;
     int count = 0;
     int y = HauteurFenetre - 100; // Position verticale de la première règle
 
@@ -42,11 +38,9 @@ void print_rules_on_screen(Rule* rules) {
         afficheChaine(rule_text, 15, 100, y);
         y -= 20; // Déplace la position verticale pour la règle suivante
 
-        current = current->next;
+        current = current->suivant;
     }
 }
-
-
 
 void gestionEvenement(EvenementGfx evenement) {
     switch (evenement) {
@@ -90,25 +84,25 @@ void gestionEvenement(EvenementGfx evenement) {
                 int y = ordonneeSouris();
                 if (x >= LargeurFenetre / 2 - 100 && x <= LargeurFenetre / 2 + 100 && y >= 50 && y <= 150) {
                     strcpy(texteAAfficher, "Affiche regle clique !");
-                    print_rules(rules);
+                    afficherRegles(regles);
                 } else if (x >= LargeurFenetre / 2 - 100 && x <= LargeurFenetre / 2 + 100 && y >= 180 && y <= 280) {
                     strcpy(texteAAfficher, "Chainage avant clique !");
-                    forwardChaining(&facts, rules);
+                    chainageAvant(&faits, regles);
                 } else if (x >= LargeurFenetre / 2 - 300 && x <= LargeurFenetre / 2 - 100 && y >= 50 && y <= 150) {
                     strcpy(texteAAfficher, "Chainage arriere clique !");
                     printf("Entrez le goal pour le chaînage arrière : ");
                     scanf("%99s", goal);
-                    backwardChaining(goal, facts, rules);
+                    chainageArriere(goal, faits, regles, faitsVerifies);
                 } else if (x >= LargeurFenetre / 2 + 100 && x <= LargeurFenetre / 2 + 300 && y >= 50 && y <= 150) {
                     strcpy(texteAAfficher, "Quitter&sauvegarder clique !");
-                    print_rules_to_file(rules, "couleur.kbs");
+                    chargerReglesDepuisFichier(regle);
                     termineBoucleEvenements();
                 } else if (x >= LargeurFenetre / 2 - 300 && x <= LargeurFenetre / 2 - 100 && y >= 180 && y <= 280) {
                     strcpy(texteAAfficher, "Ajouter un Fait clique !");
                     printf("Entrez le fait à ajouter : ");
                     if (fgets(goal, sizeof(goal), stdin) != NULL) {
                         goal[strcspn(goal, "\n")] = 0;
-                        addFact(&facts, goal);
+                        ajouterFait(&faits, goal);
                     }
                 } else if (x >= LargeurFenetre / 2 + 100 && x <= LargeurFenetre / 2 + 300 && y >= 180 && y <= 280) {
                     strcpy(texteAAfficher, "Ajouter une regle clique !");
@@ -118,7 +112,7 @@ void gestionEvenement(EvenementGfx evenement) {
                     printf("Entrez la conclusion de la nouvelle règle : ");
                     fgets(conclusion, sizeof(conclusion), stdin);
                     conclusion[strcspn(conclusion, "\n")] = 0;
-                    addRule(&rules, condition, conclusion);
+                    ajouterRegle(&regles, condition, conclusion);
                 }
             }
             break;
@@ -134,7 +128,7 @@ void gestionEvenement(EvenementGfx evenement) {
     }
 }
 
-void initialisation() {
+void initialisation(void) {
     int nbFaits;
     printf("Entrez le nombre de faits : ");
     scanf("%d", &nbFaits);
@@ -145,15 +139,6 @@ void initialisation() {
         printf("Entrez le fait n°%d : ", i + 1);
         fgets(fait, sizeof(fait), stdin);
         fait[strcspn(fait, "\n")] = 0;
-        addFact(&facts, fait);
+        ajouterFait(&faits, fait);
     }
-}
-
-int main(int argc, char **argv) {
-    initialiseGfx(argc, argv);
-    loadRulesFromFile(&rules);
-    initialisation();
-    prepareFenetreGraphique("Projet de moteur d'inference", LargeurFenetre, HauteurFenetre);
-    lanceBoucleEvenements();
-    return 0;
 }
