@@ -6,7 +6,7 @@ Ce système expert est une application conçue pour démontrer les principes du 
 
 - **Chargement des règles**: Les règles sont chargées à partir d'un fichier pour initialiser le système.
 - **Ajout de faits**: L'utilisateur peut ajouter des faits dynamiquement.
-- **Chaînage avant**: Implémente le chaînage avant pour déduire de nouveaux faits à partir des règles existantes.
+- **Chaînage avant**: Implémente le chaînage avant pour déduire de nouveaux faits à partir des règles existantes pour la première itération. Les autres itérations possible peuvent déduire de nouveaux faits sans avoir forcément tous les prémices d'une règles qui sont vrai.
 - **Chaînage arrière**: Réalise le chaînage arrière pour vérifier la validité d'un fait donné.
 - **Gestion de l'interface utilisateur**: Propose un menu interactif pour naviguer entre les différentes fonctionnalités.
 
