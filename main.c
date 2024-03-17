@@ -3,133 +3,138 @@
 #include <string.h>
 #include <stdbool.h>
 
-typedef struct Fact {
+// Définition d'une structure pour les faits
+typedef struct Fait {
     char description[100];
-    struct Fact* next;
-} Fact;
+    struct Fait* suivant;
+} Fait;
 
+// Définition d'une structure pour les conditions des règles
 typedef struct Condition {
     char condition[100];
-    struct Condition* suiv;
+    struct Condition* suivant;
 } Condition;
 
-typedef struct Rule {
+
+// Définition d'une structure pour les règles
+typedef struct Regle {
     Condition* condition;
     char conclusion[100];
-    struct Rule* next;
-} Rule;
+    struct Regle* suivant;
+} Regle;
 
-void addFact(Fact** head, char* description) {
-    Fact* newFact = (Fact*)malloc(sizeof(Fact));
-    if (newFact == NULL) {
+
+// Fonction pour ajouter un fait à la liste de faits
+void ajouterFait(Fait** tete, char* description) {
+    Fait* nouveauFait = (Fait*)malloc(sizeof(Fait));
+    if (nouveauFait == NULL) {
         fprintf(stderr, "Erreur d'allocation de mémoire pour les faits.\n");
         exit(EXIT_FAILURE);
     }
-    strcpy(newFact->description, description);
-    newFact->next = *head;
-    *head = newFact;
+    strcpy(nouveauFait->description, description);
+    nouveauFait->suivant = *tete;
+    *tete = nouveauFait;
 }
 
-void addRule(Rule** head, char* condition, char* conclusion) {
-    Rule* newRule = (Rule*)malloc(sizeof(Rule));
-    if (newRule == NULL) {
-        perror("Erreur d'allocation de mémoire");
-        exit(EXIT_FAILURE);
-    }
-    newRule->condition = (Condition*)malloc(sizeof(Condition));
-    if (newRule->condition == NULL) {
-        perror("Erreur d'allocation de mémoire");
-        exit(EXIT_FAILURE);
-    }
-    strcpy(newRule->condition->condition, condition);
-    newRule->condition->suiv = NULL;
-    strcpy(newRule->conclusion, conclusion);
-    newRule->next = NULL;
 
-    // Si la liste est vide, ajouter la nouvelle règle en tête.
-    if (*head == NULL) {
-        *head = newRule;
+// Fonction pour ajouter une règle à la liste de règles
+void ajouterRegle(Regle** tete, char* condition, char* conclusion) {
+    Regle* nouvelleRegle = (Regle*)malloc(sizeof(Regle));
+    if (nouvelleRegle == NULL) {
+        perror("Erreur d'allocation de mémoire");
+        exit(EXIT_FAILURE);
+    }
+    nouvelleRegle->condition = (Condition*)malloc(sizeof(Condition));
+    if (nouvelleRegle->condition == NULL) {
+        perror("Erreur d'allocation de mémoire");
+        exit(EXIT_FAILURE);
+    }
+    strcpy(nouvelleRegle->condition->condition, condition);
+    nouvelleRegle->condition->suivant = NULL;
+    strcpy(nouvelleRegle->conclusion, conclusion);
+    nouvelleRegle->suivant = NULL;
+
+    if (*tete == NULL) {
+        *tete = nouvelleRegle;
     } else {
-        // Parcourir la liste jusqu'au dernier élément.
-        Rule* current = *head;
-        while (current->next != NULL) {
-            current = current->next;
+        Regle* courant = *tete;
+        while (courant->suivant != NULL) {
+            courant = courant->suivant;
         }
-        // Ajouter la nouvelle règle à la fin.
-        current->next = newRule;
+        courant->suivant = nouvelleRegle;
     }
 }
 
 
-
-bool fact_exists_in_facts(const char* fact_description, Fact* facts) {
-    while (facts != NULL) {
-        if (strcmp(facts->description, fact_description) == 0) {
+// Vérifie si un fait existe déjà dans la liste de faits
+bool faitExisteDansFaits(const char* descriptionFait, Fait* faits) {
+    while (faits != NULL) {
+        if (strcmp(faits->description, descriptionFait) == 0) {
             return true;
         }
-        facts = facts->next;
+        faits = faits->suivant;
     }
     return false;
 }
 
-void loadRulesFromFile(Rule** rules) {
-    FILE* file = fopen("pizza.kbs", "r");
-    if (!file) {
+
+// Charge les règles depuis un fichier
+void chargerReglesDepuisFichier(Regle** regles) {
+    FILE* fichier = fopen("regles.kbs", "r");
+    if (!fichier) {
         perror("Impossible d'ouvrir le fichier de règles");
         exit(EXIT_FAILURE);
     }
 
-    char line[200];
-    while (fgets(line, sizeof(line), file) != NULL) {
+    char ligne[200];
+    while (fgets(ligne, sizeof(ligne), fichier) != NULL) {
         char condition[100], conclusion[100];
-        if (sscanf(line, "%99[^-]-> %99[^\n];", condition, conclusion) == 2) {
-            addRule(rules, condition, conclusion);
+        if (sscanf(ligne, "%99[^-]-> %99[^\n];", condition, conclusion) == 2) {
+            ajouterRegle(regles, condition, conclusion);
         }
     }
 
-    fclose(file);
+    fclose(fichier);
 }
 
-// Chaînage avant
-void forwardChaining(Fact** facts, Rule* rules) {
-    bool new_fact_added = true;
+
+// Implémente le chaînage avant pour inférer de nouveaux faits à partir des règles et faits existants
+void chainageAvant(Fait** faits, Regle* regles) {
+    bool nouveauFaitAjoute = true;
     int iteration = 1;
 
     printf("Début du chaînage avant :\n");
 
-    while (new_fact_added) {
-        new_fact_added = false;
-        printf("Iteration %d :\n", iteration++);
+// Continue tant que de nouveaux faits sont ajoutés à chaque itération
+    while (nouveauFaitAjoute) {
+        nouveauFaitAjoute = false;
+        printf("Itération %d :\n", iteration++);
 
-        Rule* current_rule = rules;
-        bool facts_added_in_iteration = false; // Indicateur pour vérifier si des faits ont été ajoutés dans cette itération
-        while (current_rule != NULL) {
-            // Vérifier si toutes les conditions de la règle sont satisfaites par les faits actuels
-            bool all_conditions_satisfied = true;
-            char* token = strtok(current_rule->condition->condition, " ");
-            while (token != NULL) {
-                if (!fact_exists_in_facts(token, *facts)) {
-                    all_conditions_satisfied = false;
+        Regle* regleCourante = regles;
+        bool faitsAjoutesDansIteration = false;
+        while (regleCourante != NULL) {
+            bool toutesConditionsSatisfaites = true;
+            char* jeton = strtok(regleCourante->condition->condition, " ");
+            while (jeton != NULL) {
+                if (!faitExisteDansFaits(jeton, *faits)) {
+                    toutesConditionsSatisfaites = false;
                     break;
                 }
-                token = strtok(NULL, " ");
+                jeton = strtok(NULL, " ");
             }
 
-            // Si toutes les conditions sont satisfaites, ajouter la conclusion comme nouveau fait
-            if (all_conditions_satisfied) {
-                // Si la conclusion n'est pas déjà un fait, l'ajouter
-                if (!fact_exists_in_facts(current_rule->conclusion, *facts)) {
-                    addFact(facts, current_rule->conclusion);
-                    printf("Nouveau fait ajouté : %s\n", current_rule->conclusion);
-                    new_fact_added = true;
-                    facts_added_in_iteration = true;
+            if (toutesConditionsSatisfaites) {
+                if (!faitExisteDansFaits(regleCourante->conclusion, *faits)) {
+                    ajouterFait(faits, regleCourante->conclusion);
+                    printf("Nouveau fait ajouté : %s\n", regleCourante->conclusion);
+                    nouveauFaitAjoute = true;
+                    faitsAjoutesDansIteration = true;
                 }
             }
-            current_rule = current_rule->next;
+            regleCourante = regleCourante->suivant;
         }
 
-        // Si aucun nouveau fait n'a été ajouté dans cette itération, cela signifie que le chaînage est terminé
-        if (!facts_added_in_iteration) {
+        if (!faitsAjoutesDansIteration) {
             break;
         }
     }
@@ -138,147 +143,180 @@ void forwardChaining(Fact** facts, Rule* rules) {
 }
 
 
-
-
-// Chaînage arrière
-int backwardChaining(char* goal, Fact* facts, Rule* rules) {
-    // Vérifier si le goal est déjà un fait dans les faits
-    bool conditionsProuvees = true;
-    Fact* currentFact = facts;
-    while (currentFact != NULL) {
-        if (strstr(currentFact->description, goal) != NULL) {
-            printf("Goal: %s est vrai\n", goal);
-            return 1; // Le goal est déjà un fait présent, donc il est vrai
+// Fonction de chaînage arrière qui vérifie si un objectif peut être atteint à partir des faits et règles existants
+int chainageArriere(char* objectif, Fait* faits, Regle* regles, Fait* faitsVerifies) {
+    // Vérifie si l'objectif est déjà un fait
+    Fait* faitCourant = faits;
+    while (faitCourant != NULL) {
+        if (strstr(objectif, faitCourant->description) != NULL) {
+            printf("Objectif: %s est vrai\n", objectif);
+            return 1;
         }
-        currentFact = currentFact->next;
+        faitCourant = faitCourant->suivant;
     }
 
-    // Parcourir les règles pour voir si le goal peut être prouvé
-    Rule* currentRule = rules;
-    while (currentRule != NULL) {
-        if (strstr(currentRule->conclusion, goal) != NULL) {
-           printf("Goal: %s peut être prouvé par la règle: %s -> %s\n", goal, currentRule->condition->condition, currentRule->conclusion);
-            // Vérifier si les conditions de la règle peuvent être prouvées
-            char* token = strtok(currentRule->condition->condition, " ");
-            while (token != NULL) {
-                if (!backwardChaining(token, facts, rules)) {
-                    conditionsProuvees = 0;
-                    break; // Si une condition ne peut pas être prouvée, arrêter la vérification des autres conditions
+ // Évite les vérifications répétées pour prévenir les boucles infinies
+    Fait* faitVerifie = faitsVerifies;
+    while (faitVerifie != NULL) {
+        if (strstr(objectif, faitVerifie->description) != NULL) {
+            printf("Objectif: %s a déjà été vérifié, évitant les boucles infinies.\n", objectif);
+            return 0; // Objectif déjà vérifié
+        }
+        faitVerifie = faitVerifie->suivant;
+    }
+
+    ajouterFait(&faitsVerifies, objectif);
+
+    Regle* regleCourante = regles;
+    while (regleCourante != NULL) {
+        if (strstr(regleCourante->conclusion, objectif) != NULL) {
+            printf("Objectif: %s peut être prouvé par la règle: %s -> %s\n", objectif, regleCourante->condition->condition, regleCourante->conclusion);
+            
+            char* jeton = strtok(regleCourante->condition->condition, " ");
+            bool conditionsProuvees = true;
+            while (jeton != NULL) {
+                if (!chainageArriere(jeton, faits, regles, faitsVerifies)) {
+                    conditionsProuvees = false;
+                    printf("La condition %s dans la règle %s -> %s ne peut pas être prouvée.\n", jeton, regleCourante->condition->condition, regleCourante->conclusion);
+                    break;
                 }
-                token = strtok(NULL, " ");
+                jeton = strtok(NULL, " ");
             }
+
             if (conditionsProuvees) {
-                printf("Conditions prouvées pour la règle: %s -> %s\n", currentRule->condition->condition, currentRule->conclusion);
-                printf("Goal: %s est prouvé\n", goal); // Afficher que le goal est prouvé
-                return 1; // Si toutes les conditions de la règle sont prouvées, la règle peut prouver le goal
+                printf("Conditions prouvées pour la règle: %s -> %s\n", regleCourante->condition->condition, regleCourante->conclusion);
+                printf("Objectif: %s est prouvé\n", objectif);
+                return 1; // Toutes les conditions sont prouvées
             }
         }
-        currentRule = currentRule->next;
+        regleCourante = regleCourante->suivant;
     }
 
-    printf("Goal: %s ne peut pas être prouvé\n", goal);
-    return 0; // Si aucune règle ne peut prouver le goal
+    printf("Objectif: %s ne peut pas être prouvé\n", objectif);
+    return 0; // Objectif ne peut pas être prouvé
 }
 
-// Fonction pour afficher les règles
-void print_rules(Rule* rules) {
+
+// Affiche la liste des règles
+void afficherRegles(Regle* regles) {
     printf("Liste des règles :\n");
-    Rule* current = rules;
-    int count = 0;
-    while (current != NULL) {
-        count++;
-        printf("n°%d) ", count);
-        printf("%s -> %s\n", current->condition->condition, current->conclusion);
-        current = current->next;
-    }
-}
-
-void freeFacts(Fact* head) {
-    Fact* tmp;
-    while (head != NULL) {
-        tmp = head;
-        head = head->next;
-        free(tmp); // Libérer le nœud
+    Regle* courant = regles;
+    int compteur = 0;
+    while (courant != NULL) {
+        compteur++;
+        printf("Règle n°%d) ", compteur);
+        printf("%s -> %s\n", courant->condition->condition, courant->conclusion);
+        courant = courant->suivant;
     }
 }
 
 
-void freeRules(Rule* head) {
-    Rule* tmp;
-    while (head != NULL) {
-        tmp = head;
-        head = head->next;
+// Libère la mémoire allouée pour les faits
+void libererFaits(Fait* tete) {
+    Fait* tmp;
+    while (tete != NULL) {
+        tmp = tete;
+        tete = tete->suivant;
+        free(tmp);
+    }
+}
+
+// Libère la mémoire allouée pour les règles
+void libererRegles(Regle* tete) {
+    Regle* tmp;
+    while (tete != NULL) {
+        tmp = tete;
+        tete = tete->suivant; // Libère aussi la mémoire allouée pour la condition
         free(tmp);
     }
 }
 
 
+// Sauvegarde les règles actuelles dans un fichier
+void sauvegarderReglesDansFichier(Regle* regles) {
+    FILE* fichier = fopen("regles.kbs", "w");
+    if (fichier == NULL) {
+        perror("Erreur lors de l'ouverture du fichier");
+        return;
+    }
+    Regle* courant = regles;
+    while (courant != NULL) {
+        fprintf(fichier, "%s -> %s\n", courant->condition->condition, courant->conclusion);
+        courant = courant->suivant;
+    }
+    fclose(fichier);
+}
 
 
-void displayMenu() {
+
+// Affiche le menu principal du programme
+void afficherMenu() {
     printf("\nMenu Principal\n");
     printf("1. Afficher les règles\n");
     printf("2. Effectuer un chaînage avant\n");
     printf("3. Effectuer un chaînage arrière\n");
-    printf("4. Ajouter de nouveaux faits\n");
-    printf("5. Ajouter de nouvelles règles\n");
+    printf("4. Ajouter un nouveau fait\n");
+    printf("5. Ajouter une nouvelle règle\n");
     printf("6. Quitter\n");
 }
 
-void handleUserInput(Fact** facts, Rule** rules) {
-    int nbFaits;
-    printf("Entrez le nombre de faits : ");
-    scanf("%d", &nbFaits);
-    while (getchar() != '\n'); // Nettoyer le buffer d'entrée après la lecture du nombre
 
-    for (int i = 0; i < nbFaits; i++) {
+// Gère la saisie de l'utilisateur et les actions correspondantes
+void gererSaisieUtilisateur(Fait** faits, Regle** regles) {
+    int nombreFaits;
+    printf("Entrez le nombre de faits : ");
+    scanf("%d", &nombreFaits);
+    while (getchar() != '\n');
+
+    for (int i = 0; i < nombreFaits; i++) {
         char fait[100];
         printf("Entrez le fait n°%d : ", i + 1);
         fgets(fait, sizeof(fait), stdin);
-        fait[strcspn(fait, "\n")] = 0; // Supprimer le caractère de saut de ligne à la fin
-        addFact(facts, fait);
+        fait[strcspn(fait, "\n")] = 0;
+        ajouterFait(faits, fait);
     }
-    int choice;
-    char goal[100], condition[100], conclusion[100];
+    int choix;
+    char objectif[100], condition[100], conclusion[100];
 
     while(1) {
-        displayMenu();
+        afficherMenu();
         printf("Entrez votre choix : ");
-        scanf("%d", &choice);
-        // Nettoyer le buffer d'entrée
+        scanf("%d", &choix);
         while(getchar() != '\n');
 
-        switch(choice) {
+        switch(choix) {
             case 1:
-                print_rules(*rules);
+                afficherRegles(*regles);
                 break;
             case 2:
-                forwardChaining(facts, *rules);
+                chainageAvant(faits, *regles);
                 break;
             case 3:
-                printf("Entrez le goal pour le chaînage arrière : ");
-                scanf("%99s", goal);
-                backwardChaining(goal, *facts, *rules);
+                printf("Entrez l'objectif pour le chaînage arrière : ");
+                fgets(objectif, sizeof(objectif), stdin);
+                objectif[strcspn(objectif, "\n")] = 0;
+                chainageArriere(objectif, *faits, *regles, NULL);
                 break;
             case 4:
                 printf("Entrez le fait à ajouter : ");
-                if (fgets(goal, sizeof(goal), stdin) != NULL) { // Utilisation sécurisée de fgets
-                    goal[strcspn(goal, "\n")] = 0; // Supprimer le saut de ligne
-                    addFact(facts, goal); // Utilisation correcte des variables
+                if (fgets(objectif, sizeof(objectif), stdin) != NULL) {
+                    objectif[strcspn(objectif, "\n")] = 0;
+                    ajouterFait(faits, objectif);
                 }
                 break;
             case 5:
                 printf("Entrez la condition de la nouvelle règle : ");
                 fgets(condition, sizeof(condition), stdin);
-                condition[strcspn(condition, "\n")] = 0; // Supprimer le saut de ligne
+                condition[strcspn(condition, "\n")] = 0;
                 printf("Entrez la conclusion de la nouvelle règle : ");
                 fgets(conclusion, sizeof(conclusion), stdin);
-                conclusion[strcspn(conclusion, "\n")] = 0; // Supprimer le saut de ligne
-                addRule(rules, condition, conclusion);
+                conclusion[strcspn(conclusion, "\n")] = 0;
+                ajouterRegle(regles, condition, conclusion);
+                sauvegarderReglesDansFichier(*regles);
                 break;
             case 6:
                 printf("Quitter.\n");
-                return; // Sortir de la fonction et donc terminer le programme
+                return;
             default:
                 printf("Choix invalide. Veuillez réessayer.\n");
         }
@@ -286,16 +324,14 @@ void handleUserInput(Fact** facts, Rule** rules) {
 }
 
 int main() {
-    Fact* facts = NULL;
-    Rule* rules = NULL;
+    Fait* faits = NULL;
+    Regle* regles = NULL;
 
-    loadRulesFromFile(&rules);
-    // Initialiser les faits et les règles ici si nécessaire
-    handleUserInput(&facts, &rules);
+    chargerReglesDepuisFichier(&regles);
+    gererSaisieUtilisateur(&faits, &regles);
 
-    // Libérer les ressources allouées
-    freeFacts(facts);
-    freeRules(rules);
+    libererFaits(faits);
+    libererRegles(regles);
 
     return 0;
 }
