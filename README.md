@@ -31,46 +31,45 @@ Ce système expert est une application conçue pour démontrer les principes du 
 
 ## Architecture du programme 
 
-  // Affiche le menu principal du programme
-  void afficherMenu();
-
-
-// Charge les règles depuis un fichier
-void chargerReglesDepuisFichier(Regle** regles);
-
-// Affiche la liste des règles
-void afficherRegles(Regle* regles);
-
-
-
-// Gère la saisie de l'utilisateur et les actions correspondantes
-void gererSaisieUtilisateur(Fait** faits, Regle** regles);
-
-// Fonction pour ajouter un fait à la liste de faits
-void ajouterFait(Fait** tete, char* description);
-
-// Fonction pour ajouter une règle à la liste de règles
-void ajouterRegle(Regle** tete, char* condition, char* conclusion);
-
-
-// Vérifie si un fait existe déjà dans la liste de faits
-bool faitExisteDansFaits(const char* descriptionFait, Fait* faits);
-
-// Implémente le chaînage avant pour inférer de nouveaux faits à partir des règles et faits existants
-void chainageAvant(Fait** faits, Regle* regles);
-
-// Fonction de chaînage arrière qui vérifie si un objectif peut être atteint à partir des faits et règles existants
-int chainageArriere(char* objectif, Fait* faits, Regle* regles, Fait* faitsVerifies);
-
-
-// Sauvegarde les règles actuelles dans un fichier
-void sauvegarderReglesDansFichier(Regle* regles);
-
-// Libère la mémoire allouée pour les faits
-void libererFaits(Fait* tete);
-
-// Libère la mémoire allouée pour les règles
-void libererRegles(Regle* tete);
+// Affiche le menu principal du programme:  
+void afficherMenu();  
+.  
+.  
+// Charge les règles depuis un fichier:  
+void chargerReglesDepuisFichier(Regle** regles);  
+.  
+// Affiche la liste des règles:  
+void afficherRegles(Regle* regles);  
+.  
+.  
+// Gère la saisie de l'utilisateur et les actions correspondantes:  
+void gererSaisieUtilisateur(Fait** faits, Regle** regles);  
+.  
+// Fonction pour ajouter un fait à la liste de faits:  
+void ajouterFait(Fait** tete, char* description);  
+.  
+// Fonction pour ajouter une règle à la liste de règles:  
+void ajouterRegle(Regle** tete, char* condition, char* conclusion);  
+.  
+.  
+// Vérifie si un fait existe déjà dans la liste de faits:  
+bool faitExisteDansFaits(const char* descriptionFait, Fait* faits);  
+.  
+// Implémente le chaînage avant pour inférer de nouveaux faits à partir des règles et faits existants:  
+void chainageAvant(Fait** faits, Regle* regles);  
+.  
+// Fonction de chaînage arrière qui vérifie si un objectif peut être atteint à partir des faits et règles existants:  
+int chainageArriere(char* objectif, Fait* faits, Regle* regles, Fait* faitsVerifies);  
+.  
+.  
+// Sauvegarde les règles actuelles dans un fichier:  
+void sauvegarderReglesDansFichier(Regle* regles);  
+.  
+// Libère la mémoire allouée pour les faits:  
+void libererFaits(Fait* tete);  
+.  
+// Libère la mémoire allouée pour les règles:  
+void libererRegles(Regle* tete);  
 
 
 ## Compilation
