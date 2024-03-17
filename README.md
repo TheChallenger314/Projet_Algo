@@ -86,6 +86,10 @@ Après la compilation, exécutez le système expert avec : ./expert_system
 >>>>>>> 078aa8043870b4bca1d09f516928932cf61869ff
 ## Protocol
 
-Pour rentrer une nouvelle règle suivre cet exemple : fait1 fait2 -> conclusion;
-                                                     fait1 -> conclusion;
-                                                     
+<pre>Pour rentrer une nouvelle règle suivre cet exemple : fait1 fait2 -> conclusion1; [Entrée]</pre>  
+<pre>                                                     fait3 -> conclusion2; [Entrée]</pre>  
+
+<pre>Pour rentrer un nouveau fait suivre cet exemple : fait1; [Entrée]</pre> 
+<pre>                                                  fait2; [Entrée]</pre>
+<pre>                                                  fait3; [Entrée]</pre>
+
