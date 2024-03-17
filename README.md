@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Système Expert
 
 Ce système expert est une application conçue pour démontrer les principes du chaînage avant et arrière dans un environnement de règles définies.
@@ -35,3 +36,7 @@ Utilisez le fichier `Makefile` fourni pour compiler le projet : make
 ## Exécution
 
 Après la compilation, exécutez le système expert avec : ./expert_system
+=======
+# Projet_Algo
+
+>>>>>>> 078aa8043870b4bca1d09f516928932cf61869ff
