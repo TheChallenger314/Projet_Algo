@@ -40,3 +40,7 @@ Après la compilation, exécutez le système expert avec : ./expert_system
 # Projet_Algo
 
 >>>>>>> 078aa8043870b4bca1d09f516928932cf61869ff
+## Protocol
+
+Pour rentrer une nouvelle règle suivre cet exemple : fait1 fait2 -> conclusion;
+                                                     fait1 -> conclusion;
