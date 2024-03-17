@@ -234,6 +234,21 @@ void freeRules(Rule* head) {
     }
 }
 
+void save_rules_to_file(Rule* rules) {
+    FILE* file = fopen("regles.kbs", "w");
+    if (file == NULL) {
+        perror("Erreur lors de l'ouverture du fichier");
+        return;
+    }
+    Rule* current = rules;
+    while (current != NULL) {
+        fprintf(file, "%s -> %s\n", current->condition->condition, current->conclusion);
+        current = current->next;
+    }
+    fclose(file);
+}
+
+
 
 
 
@@ -294,10 +309,11 @@ void handleUserInput(Fact** facts, Rule** rules) {
                 printf("Entrez la condition de la nouvelle règle : ");
                 fgets(condition, sizeof(condition), stdin);
                 condition[strcspn(condition, "\n")] = 0; // Supprimer le saut de ligne
-                printf("Entrez la conclusion de la nouvelle règle : ");
+                printf("Entrez la conclusion de la nouvelle règle suivit d'un ; : ");
                 fgets(conclusion, sizeof(conclusion), stdin);
                 conclusion[strcspn(conclusion, "\n")] = 0; // Supprimer le saut de ligne
                 addRule(rules, condition, conclusion);
+                save_rules_to_file(*rules); // Appel de la fonction pour sauvegarder les règles dans le fichier
                 break;
             case 6:
                 printf("Quitter.\n");
