@@ -6,9 +6,6 @@ EXECUTABLE=expert_system
 all:
 	$(CC) $(CFLAGS) $(SOURCES) -o $(EXECUTABLE)
 
-clean:
-	rm -f $(EXECUTABLE)
-
 gfx: code.o libisentlib.a
 	gcc -Wall code.o -o code libisentlib.a -lm -lglut -lGL -lX11
 

@@ -48,7 +48,7 @@ void print_rules(Rule* rules) {
     while (current != NULL) {
         count++;
         printf("n°%d) ", count);
-        printf("%s -> %s\n", current->condition, current->conclusion);
+        printf("%s -> %s\n", current->condition->condition, current->conclusion);
         current = current->next;
     }
 }

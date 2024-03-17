@@ -25,7 +25,7 @@ typedef struct Rule {
 // Prototypes de fonctions
 void addFact(Fact** head, char* description);
 void addRule(Rule** head, char* condition, char* conclusion);
-void forwardChaining(Fact* facts, Rule* rules);
+void forwardChaining(Fact** facts, Rule* rules);
 int backwardChaining(char* goal, Fact* facts, Rule* rules);
 void print_rules(Rule* rules);
 bool fact_exists_in_facts(const char* fact_description, Fact* facts);

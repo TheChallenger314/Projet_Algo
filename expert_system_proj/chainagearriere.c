@@ -39,16 +39,3 @@ int backwardChaining(char* goal, Fact* facts, Rule* rules) {
     printf("Goal: %s ne peut pas être prouvé\n", goal);
     return 0; // Si aucune règle ne peut prouver le goal
 }
-
-// Fonction pour afficher les règles
-void print_rules(Rule* rules) {
-    printf("Liste des règles :\n");
-    Rule* current = rules;
-    int count = 0;
-    while (current != NULL) {
-        count++;
-        printf("n°%d) ", count);
-        printf("%s -> %s\n", current->condition->condition, current->conclusion);
-        current = current->next;
-    }
-}
