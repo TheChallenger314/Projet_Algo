@@ -250,8 +250,6 @@ void save_rules_to_file(Rule* rules) {
 
 
 
-
-
 void displayMenu() {
     printf("\nMenu Principal\n");
     printf("1. Afficher les règles\n");
